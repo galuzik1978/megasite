@@ -1,0 +1,22 @@
+<!-- right column -->
+<!-- general form elements -->
+<div class="card card-info">
+  <div class="card-header">
+    <h3 class="card-title">{{ form_header }}</h3>
+  </div>
+   <div class="card-body">
+    <!-- /.card-header -->
+    <!-- form start -->
+    <form method="post" action="{% url form.action %}" class="second-form">
+    {% csrf_token %}
+    {{ form }}
+      <!-- /.card-body -->
+      <div class="card-footer">
+        <input type="hidden" name="form_class" value="{{form_class}}">
+        <input type="button" class="btn btn-warning cancel" value="Отменить">
+        <input type="submit" class="btn btn-primary send-form" value="Отправить">
+      </div>
+    </form>
+  </div>
+</div>
+<!-- /.card -->

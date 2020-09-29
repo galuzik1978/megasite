@@ -1,0 +1,90 @@
+{% extends "basePage.html" %}
+{% load static %}
+
+{% block contentHeader %}
+<div class="container-fluid">
+    <div class="row mb-2">
+        <div class="col-sm-12s">
+            <h1 class="m-0 text-dark">{{header}}</h1>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Выбери заявку для обработки</h3>
+
+            <div class="card-tools">
+              <div class="input-group input-group-sm" style="width: 250px;">
+                <input type="text" name="table_search" class="form-control float-right" placeholder="Поиск по заявкам">
+
+                <div class="input-group-append">
+                  <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /.card-header -->
+          <div class="card-body table-responsive p-0" style="height: 100%;">
+            <table class="table table-head-fixed text-nowrap">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+              {% for task in object_list %}
+                <tr>
+                  <td>{{ task.id }}</td>
+                  <td>{{ task.initiator.username }}</td>
+                  <td>{{ task.initiator.username }}</td>
+                  <td>{{ task.executor.username }}</td>
+                  <td>{{ task.title }}</td>
+                  <td>{{ task.content }}</td>
+                  <td><a href="{% url 'works:task-detail' task.id %}">{{ task.status }}</a></td>
+                  <td>{{ task.work_flow.inbox.customer.full_name }}</td>
+                </tr>
+              {% empty %}
+                Нет необработанных задач
+              {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span class="step-links">
+              {% if page_obj.has_previous %}
+                  <a href="?page=1">&laquo; Первая</a>
+                  <a href="?page={{ page_obj.previous_page_number }}"> << </a>
+              {% endif %}
+
+              <span class="current">
+                  Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}.
+              </span>
+
+              {% if page_obj.has_next %}
+                  <a href="?page={{ page_obj.next_page_number }}"> >> </a>
+                  <a href="?page={{ page_obj.paginator.num_pages }}">Последняя &raquo;</a>
+              {% endif %}
+            </span>
+          </div>
+          <!-- /.card-body -->
+        </div>
+        <!-- /.card -->
+      </div>
+    </div>
+<div class="container-fluid">
+</div>
+{% endblock %}
+
+{% block controlScripts %}
+<script src="{% static 'js/cookies/jquery.cookie.js' %}"></script>
+<script src="{% static "js/menuControl.js" %}"></script>
+{% endblock controlScripts %}

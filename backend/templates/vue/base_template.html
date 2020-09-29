@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{title|default:"My first Vue app"}}</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+</head>
+<body>
+  <script type='text/javascript'>
+      {% block variables %}
+      var message = {{ items_json|safe }};
+      {% endblock variables %}
+  </script>
+  {% block template %}
+  <div id="app">
+    <p>[[ message ]]</p>
+  </div>
+  {% endblock template %}
+  <script>
+    {% block script %}
+    var app = new Vue({
+      delimiters: ['[[', ']]'],
+      el: '#app',
+      vuetify: new Vuetify(),
+      data: {
+        message: message
+      }
+    })
+    {% endblock script %}
+  </script>
+</body>
+</html>

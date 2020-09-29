@@ -1,0 +1,27 @@
+{% load static %}
+<!-- Sidebar user panel (optional) -->
+<div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center">
+    <div class="image">
+        <img src="{% static "admlte3/dist/img/user2-160x160.jpg" %}" class="img-circle elevation-2" alt="User Image">
+    </div>
+    <div class="info">
+        <a href="#" class="d-block"> {{ user.first_name }} {{ user.profile.surname }} {{ user.last_name }}</a>
+    </div>
+</div>
+
+    <!-- Sidebar Menu -->
+<nav class="mt-2">
+    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+        <!-- Add icons to the links using the .nav-icon class
+        with font-awesome or any other icon font library -->
+        {% for section in menu.sections %}
+        <li class="nav-item">
+        <a href="{% url section.url %}?id={{ forloop.counter0 }}" class="nav-link {% if section.is_active %} active {% endif %}">
+            <i class="{{section.icon }} nav-icon"></i>
+            <p> {{ section.name }}  </p>
+        </a>
+        {% endfor %}
+        </li>
+    </ul>
+</nav>
+<!-- /.sidebar-menu -->

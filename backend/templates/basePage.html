@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block navbar %}
+{% for section in menu.sections %}
+    {% if section.is_active == True %}
+        {% include "navbar.html" with menu=section.menu %}
+    {% endif %}
+{% endfor %}
+{% endblock %}
+
+{% block mainSider %}
+{% include "mainSider.html" %}
+{% endblock %}
