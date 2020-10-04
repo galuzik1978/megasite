@@ -8,9 +8,11 @@ router = routers.DefaultRouter()
 router.register(r'inbox', views.InboxApiView)
 router.register(r'outbox', views.OutboxApiView)
 router.register(r'sender', views.SenderApiView)
+router.register(r'manager', views.ManagerApiView)
 router.register(r'profile', views.ProfileApiView)
 router.register(r'role', views.RoleApiView)
 router.register(r'customer', views.CustomerApiView)
+router.register(r'organisation', views.OrganisationApiView)
 router.register(r'type_letter', views.TypeLetterApiView)
 router.register(r'send_status', views.SendStatusApiView)
 router.register(r'type_work', views.TypeWorkApiView)
@@ -40,6 +42,8 @@ router.register(r'device', views.DeviceApiView)
 urlpatterns = [
     path('', views.MainPageView.as_view(), name='main'),
     path('api/', include (router.urls), name='api'),
+    path('inbox/decline/<int:inbox>/', views.InboxDeclineView.as_view(), name='inboxDecline'),
+    path('inbox/accept/<int:inbox>/', views.InboxAcceptView.as_view(), name='inboxAccept'),
     # path('api-token-auth/', rest_views.obtain_auth_token),
     path('api-token-auth/', views.CustomApiLoginView.as_view()),
     path('api/innrequest/', views.InnRequestView.as_view()),

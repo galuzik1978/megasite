@@ -22,9 +22,9 @@
                 <ApiSelect 
                   v-if="field.type=='select'"
                   :field=fields[index] 
-                  @getSelect="getApiSelect"
                   :key=fields[index].name
-                  v-model=fields[index].value
+                  :value=fields[index].value
+                  @input="changeSelect(field, $event)"
                 ></ApiSelect>
 
                 <v-menu
@@ -40,14 +40,14 @@
                   <template v-slot:activator="{ on, attrs }">
                     <v-text-field
                       v-model=field.value
-                      label="Выбери дату"
+                      :label=field.text
                       :prepend-icon=field.icon
                       readonly
                       v-bind="attrs"
                       v-on="on"
                     ></v-text-field>
                   </template>
-                  <v-date-picker v-model=fields[index].value @input="menu[index] = false"></v-date-picker>
+                  <v-date-picker v-model=fields[index].value @input="menu[index] = false, cnangeItem(fields[index])"></v-date-picker>
                 </v-menu>
 
                 <v-textarea
@@ -55,21 +55,33 @@
                   v-model=fields[index].value
                   :label=field.text
                   :key=fields[index].name
+                  @change="cnangeItem(fields[index])"
                 ></v-textarea>
 
                 <v-file-input 
-                  v-else-if="field.type=='file'"
+                  v-else-if="field.type=='file' && !update"
                   show-size
                   :label=field.text
                   :key=fields[index].name
                   v-model=fields[index].value
+                  @change="cnangeItem(fields[index])"
                 ></v-file-input>
+                
+                <a 
+                  v-else-if="field.type=='file' && update"
+                  show-size
+                  :label=field.text
+                  :key=fields[index].name
+                  :href=fields[index].value
+                  target="_blank"
+                >{{ fields[index].value }}</a>
 
                 <input 
                   v-else-if="field.type=='hidden'"
                   type="hidden"
                   v-model=fields[index].value
                   :key=fields[index].name
+                  @change="cnangeItem(fields[index])"
                 >
 
                 <v-text-field
@@ -78,7 +90,7 @@
                   :placeholder=field.text
                   v-model=fields[index].value
                   :type=field.type
-                  @change="handleFunctionCall(field.callback, $event)"
+                  @change="handleFunctionCall(field.callback, $event), cnangeItem(fields[index])"
                   :key=fields[index].name
                   :error-messages=fields[index].error
                   :success-messages=fields[index].success
@@ -88,16 +100,43 @@
             </template>
           </v-row>
         </v-container>
-        <v-card-actions>
+
+        <v-card-actions v-if="actions && update"> 
+          <template v-for="action in actions"> 
+            <v-spacer 
+              :key="'spacer' + action.url"
+            ></v-spacer> 
+            <v-btn 
+              elevation="8" 
+              :color="action.color"
+              @click="handlerClickEvent(action.url)"
+              :key="'btn' + action.url"
+            > 
+              <v-icon
+                left
+              >
+                {{ action.icon }}
+              </v-icon>
+            {{ action.text }}</v-btn>
+          </template>
+          <v-spacer></v-spacer>
+        </v-card-actions>
+
+        <v-card-actions v-else>
           <v-spacer></v-spacer>
           <v-btn
-            text
-            color="primary"
+            elevation="8" 
             @click="close"
           >Отмена</v-btn>
-          <v-btn
-            text
+          <v-btn v-if="update"
+            color="primary"
+            @click="updateItem"
+            elevation="8" 
+          >Обновить</v-btn>
+          <v-btn v-else
+            color="primary"
             @click="saveItem"
+            elevation="8" 
           >Сохранить</v-btn>
         </v-card-actions>
       </v-card>
@@ -114,10 +153,12 @@ export default {
   },
 
   props:{
+
     dialog:{
       type: Boolean,
       required: true
     },
+
     content: {
       type: Object,
       default: function () {
@@ -199,6 +240,15 @@ export default {
 
     url: {
       type: String,
+    },
+
+    update:{
+      type: Boolean,
+      default: false
+    },
+    
+    actions: {
+      type: Object,
     }
   },
 
@@ -216,18 +266,16 @@ export default {
   methods: {
 
     saveItem: function() {
-      let data = {};
       let formData = new FormData();
       for (var field in this.fields) {
         if (this.fields[field].value){
-          data[field] = this.fields[field].value
-          formData.append(field, this.fields[field].value)     
+          formData.append(field, JSON.stringify(this.fields[field].value))     
         }
       }
       let v = this
       this.$store.dispatch('save_item', {'url':this.url, 'data':formData})
       .then(() => {
-        v.$emit('select_update')
+        v.$emit('itemsChanged')
         v.close()
       })
       .catch(error => {
@@ -241,11 +289,21 @@ export default {
     },
 
     updateItem: function(){
-      return this.lazyValue
-    },
-    
-    getApiSelect: function(Val){
-      return Val
+      let formData = new FormData();
+      for (var field in this.fields) {
+        if (this.fields[field].change){
+          formData.append(field, JSON.stringify(this.fields[field].value))     
+        }
+      }
+      let v = this
+      this.$store.dispatch('update_item', {'url':this.url, 'id':v.fields.id.value, 'data':formData})
+      .then(() => {
+        v.$emit('itemsChanged')
+        v.close()
+      })
+      .catch(error => {
+        v.save_err = error.response.data
+      })
     },
 
     edit: function(){
@@ -256,6 +314,15 @@ export default {
       if (functionName != undefined) {
         this[functionName](event)
       }
+    },
+
+    changeSelect(field, event){
+      field.value= event
+      this.cnangeItem(field)
+    },
+
+    cnangeItem(item){
+      item.change = true
     },
 
     inn_request(event){
@@ -285,11 +352,28 @@ export default {
         console.log("err=" + v.fields["inn"].error) 
       });
       
+    },
+
+    handlerClickEvent(url){
+      if (url == undefined) {
+        this.close()
+      } else {
+        let v = this
+        this.$store.dispatch('action_handler', {'url': url, 'id': v.fields.id.value})
+        .then(() => {
+          v.$emit('itemsChanged')
+          v.close()
+        })
+        .catch(error => {
+          v.save_err = error.response.data
+        })
+      }
+
     }
+
   },
   
   updated(){
-    console.log("updated")
     this.fields = this.content.fields
   }
 }

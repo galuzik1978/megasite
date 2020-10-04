@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
-import requests
 from django.views.generic import TemplateView
-from rest_framework import viewsets, permissions, authentication, status
+from rest_framework import viewsets, permissions, authentication, filters, status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -9,21 +8,18 @@ from rest_framework.views import APIView
 
 from util import customize
 from util.Mixins import FormMenuMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 from api.serializers import InboxSer, OutboxSer, SenderSer, ProfileSer, RoleSer, CustomerSer, TypeLetterSer, \
     SendStatusSer, TypeWorkSer, ContractSer, StatusSer, TaskStatusSer, EventTypeSer, MainWorkSer, TaskSer, MessageSer, \
     TypeCustomerSer, CityTypeSer, StreetTypeSer, TypeLiftSer, LiftDesignSer, TypeProtocolSer, DeviceSetSer, \
-    StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer
+    StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer, \
+    get_organization_by_inn, ManagerSer, OrganisationSer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract
 from user_profile.models import Profile, Role
-
-token = 'e01d0b0411274cc94fd22aa9c2bf5bf5d9f14936' # "Replace with Dadata API key"
-secret = '29a8f7d7d8528121a4ecdeddc9796dc68d1c40f5' # "Replace with Dadata secret key"
 
 
 class MainPageView(FormMenuMixin, TemplateView):
@@ -35,6 +31,7 @@ class InboxApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Inbox.objects.all().order_by('date')
     serializer_class = InboxSer
+    filterset_fields = ['send_status__name', 'sender__id', 'customer_id']
 
 
 class OutboxApiView(viewsets.ModelViewSet):
@@ -47,8 +44,15 @@ class OutboxApiView(viewsets.ModelViewSet):
 class SenderApiView(viewsets.ModelViewSet):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
+    queryset = User.objects.all().filter(is_staff=False)
     serializer_class = SenderSer
+
+
+class ManagerApiView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all().filter(profile__role__name="Менеджер")
+    serializer_class = ManagerSer
 
 
 class ProfileApiView(viewsets.ModelViewSet):
@@ -70,6 +74,13 @@ class CustomerApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Organisation.objects.all()
     serializer_class = CustomerSer
+
+
+class OrganisationApiView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = Organisation.objects.all()
+    serializer_class = OrganisationSer
 
 
 class TypeLetterApiView(viewsets.ModelViewSet):
@@ -288,54 +299,37 @@ class InnRequestView(APIView):
         return get_organization_by_inn(inn, request)
 
 
-def get_organization_by_inn(inn, request):
-    url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
-    headers={
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": "Token {}".format(token)
-    }
-    data = {"query": inn}
-    r = requests.post(url, headers=headers, json=data)
-    try:
-        res = r.json()['suggestions'][0]['data']
-        try:
-            type_customer = TypeOrganisation.objects.get(name=res['opf']['full'])
-        except TypeOrganisation.DoesNotExist as e:
-            type_customer = TypeOrganisation.objects.create(name=res['opf']['full'])
+class InboxDeclineView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
 
-        if res['type'] == 'LEGAL':
-            head_name = res['management']['name'].split()
-            data = {
-                'full_name': res['name']['short_with_opf'],
-                'head': res['management']['post'],
-                'head_name': head_name[1],
-                'head_surname': head_name[2],
-                'head_last_name': head_name[0],
-                'kpp': res['kpp'],
-                'ogrn': res['ogrn'],
-                'inn': res['inn'],
-                'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
-                # {"id":type_customer.pk,"name":type_customer.name}
-            }
-        elif res['type'] == 'INDIVIDUAL':
-            head_name = res['name']['full'].split()
-            data = {
-                'full_name': res['name']['short_with_opf'],
-                'head': res['opf']['full'],
-                'head_name': head_name[1],
-                'head_surname': head_name[2],
-                'head_last_name': head_name[0],
-                'kpp': '',
-                'ogrn': res['ogrn'],
-                'inn': res['inn'],
-                'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
-            }
-        else:
-            raise Exception("Не известная форма собственности: {}".format(res['type']))
+    @staticmethod
+    def post(request, *args, **kwargs):
+        inbox = Inbox.objects.get(pk=kwargs['inbox'])
+        try:
+            send_status = SendStatus.objects.get(name = "Отклонено")
+        except SendStatus.DoesNotExist as err:
+            send_status = SendStatus.objects.create(name = "Отклонено")
+        inbox.send_status = send_status
+        inbox.save()
+        serializer = InboxSer(inbox)
         response_status = status.HTTP_200_OK
-    except IndexError as e:
-        data = "Проверьте ИНН. ИНН не найден в базе"
-        response_status = status.HTTP_404_NOT_FOUND
-    data['len'] = len(r.json()['suggestions'])
-    return Response(data, status=response_status)
+        return Response(serializer.data, status=response_status)
+
+
+class InboxAcceptView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def post(request, *args, **kwargs):
+        inbox = Inbox.objects.get(pk=kwargs['inbox'])
+        try:
+            send_status = SendStatus.objects.get(name = "В работе")
+        except SendStatus.DoesNotExist as err:
+            send_status = SendStatus.objects.create(name = "В работе")
+        inbox.send_status = send_status
+        inbox.save()
+        serializer = InboxSer(inbox)
+        response_status = status.HTTP_200_OK
+        return Response(serializer.data, status=response_status)

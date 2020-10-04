@@ -94,7 +94,7 @@ class Organisation(models.Model):
     account = models.BigIntegerField(help_text="Расчетный счет", blank=True, null=True)
     cor_account = models.BigIntegerField(help_text="Кор.счёт", blank=True, null=True)
     bic = models.IntegerField(help_text="БИК", blank=True, null=True)
-    phone = models.BigIntegerField(help_text='Телефон')
+    phone = models.BigIntegerField(blank=True, null=True, help_text='Телефон')
     add_phone = models.BigIntegerField(blank=True, null=True, help_text='Доп. телефон')
     fax = models.BigIntegerField(blank=True, null=True, help_text="Факс")
     filial_count = models.SmallIntegerField(help_text="Кол-во филииалов", blank=True, null=True)

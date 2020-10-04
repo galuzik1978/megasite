@@ -1,6 +1,8 @@
 COMPANY = "Запсиб-Экспертиза"
 LOGO = "Penrose-dreieck.svg"
 TITLE = "ИКЦ Запсиб-Экспертиза"
+Company_INN = "2540167061"
+Company_Phone = "79122700658"
 
 # Конфигурация таблиц и доступа к ним, в зависимости от контекста
 tables = {
@@ -44,7 +46,7 @@ tables = {
                 'text': 'Приложение',
                 'align': 'center',
                 'sortable': True,
-                'value': 'annex',
+                'value': 'link',
             },
             {
                 'text': 'Статус',
@@ -109,7 +111,8 @@ tables = {
                     'type': 'file',
                     'text': 'Приложение',
                     'width': 12,
-                    'name': "annex"
+                    'name': "annex",
+                    'value': None
                 },
                 'send_status': {
                     'type': 'select',
@@ -138,6 +141,24 @@ tables = {
                     'value': "",
                     'subtable': 'type_letter',
                 }
+            },
+        },
+        'actions': {
+            'accept': {
+                'text': "Принять в работу",
+                'color': 'green',
+                'icon': 'mdi-account-multiple-plus',
+                'url': 'inbox/accept/',
+            },
+            'decline': {
+                'text': "Отклонить",
+                'color': 'red',
+                'icon': 'mdi-account-multiple-remove',
+                'url': 'inbox/decline/',
+            },
+            'Cancel': {
+                'text': "Закрыть",
+                'icon': 'mdi-close-circle-outline',
             },
         }
     },
@@ -337,7 +358,7 @@ tables = {
     },
     'manager': {
         'name': 'manager',
-        'url': 'api/sender/',
+        'url': 'api/manager/',
         'title': 'Менеджер',
         'ident': ['name'],
         'headers': [
@@ -373,6 +394,14 @@ tables = {
                     'type': 'hidden',
                     'name': 'id'
                 },
+                "username": {
+                    'type': 'text',
+                    'text': 'Логин',
+                    'width': 6,
+                    'icon': 'fa fa-user',
+                    'name': "username",
+                    'value': ""
+                },
                 "first_name": {
                     'type': 'text',
                     'text': 'Фамилия',
@@ -396,24 +425,6 @@ tables = {
                     'icon': 'fa fa-hashtag',
                     'name': "surname",
                     'value': ""
-                },
-                'customer': {
-                    'type': 'select',
-                    'text': 'Организация',
-                    'width': 6,
-                    'icon': 'fa fa-hashtag',
-                    'name': "fullname",
-                    'value': "",
-                    'subtable': 'customer',
-                },
-                "profile.role": {
-                    'type': 'select',
-                    'text': 'Должность',
-                    'width': 6,
-                    'icon': 'fa fa-hashtag',
-                    'name': "name",
-                    'value': "",
-                    'subtable': 'role'
                 },
             },
         },
@@ -610,6 +621,144 @@ tables = {
         'url': 'api/customer/',
         'ident': ['full_name'],
         'title': 'Контрагент',
+        'headers': [
+            {
+                'text': 'ИНН',
+                'align': 'center',
+                'sortable': True,
+                'value': 'inn',
+            },
+            {
+                'text': 'Полное наименование',
+                'align': 'center',
+                'sortable': True,
+                'value': 'inn_filial',
+            },
+            {
+                'text': 'Тип организации',
+                'align': 'center',
+                'sortable': True,
+                'value': 'type_customer',
+            },
+            {
+                'text': 'Руководитель',
+                'align': 'center',
+                'sortable': True,
+                'value': 'head_last_name + head_name + head_surname',
+            },
+            {
+                'text': 'Телефон',
+                'align': 'center',
+                'sortable': True,
+                'value': 'phone',
+            },
+        ],
+        'edit': {
+            'title': 'Новый контрагент',
+            'fields': {
+                'id': {
+                    'type': 'hidden',
+                    'name': 'id'
+                },
+                "full_name": {
+                    'type': 'text',
+                    'text': 'Полное наименование',
+                    'width': 12,
+                    'icon': 'fa fa-hashtag',
+                    'name': "full_name",
+                    'value': "",
+                },
+                "inn": {
+                    'type': 'text',
+                    'text': 'ИНН',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "inn",
+                    'value': "",
+                    'event': "change",
+                    'callback': "inn_request"
+                },
+                "inn-filial": {
+                    'type': 'text',
+                    'text': 'ИНН филиала',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "inn-filial",
+                    'value': ""
+                },
+                "kpp": {
+                    'type': 'text',
+                    'text': 'КПП',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "kpp",
+                    'value': ""
+                },
+                "ogrn": {
+                    'type': 'text',
+                    'text': 'ОГРН',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "ogrn",
+                    'value': ""
+                },
+                "head": {
+                    'type': 'text',
+                    'text': 'Должность руководителя',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "head",
+                    'value': ""
+                },
+                "head_name": {
+                    'type': 'text',
+                    'text': 'Имя руководителя',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "head_name",
+                    'value': ""
+                },
+                "head_surname": {
+                    'type': 'text',
+                    'text': 'Отчество руководителя',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "head_surname",
+                    'value': ""
+                },
+                "head_last_name": {
+                    'type': 'text',
+                    'text': 'Фамилия руководителя',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "head_last_name",
+                    'value': ""
+                },
+                "type_customer": {
+                    'type': 'select',
+                    'text': 'Тип контрагента',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "name",
+                    'value': "",
+                    'subtable': 'type_customer'
+                },
+                "phone": {
+                    'type': 'text',
+                    'text': 'Телефон',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "phone",
+                    'value': ""
+                },
+            }
+        },
+    },
+    'organisation': {
+        'name': 'organisation',
+        'url': 'api/organisation/',
+        'ident': ['full_name'],
+        'title': 'Организация',
         'headers': [
             {
                 'text': 'ИНН',
@@ -976,7 +1125,7 @@ tables = {
                 },
                 'type_work': {
                     'type': 'select',
-                    'text': 'Дата заключения',
+                    'text': 'Тип работы',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
                     'name': "name",
@@ -996,8 +1145,8 @@ tables = {
                     'text': 'Внешний номер договора',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "",
-                    'value': "external_num"
+                    'name': "external_num",
+                    'value': ""
                 },
                 'inbox': {
                     'type': 'date',
@@ -1185,7 +1334,7 @@ tables = {
                     'text': 'Менеджер',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "first_name + last_name",
+                    'name': "first_name + last_name + profile.surname",
                     'value': "",
                     'subtable': 'manager'
                 },
@@ -2510,12 +2659,12 @@ desk_config = {
     'manager': {
         'sections': [
             {
-                'text': 'Главная',
-                'icon': 'fas fa-tasks',
-                'table': tables['main_work'],
-                'buttons': '',
+                'text': 'Задачи',
+                'table': tables['task'],
+                'icon': 'far fa-handshake',
                 'menu': top_menu,
-                'is_active': False
+                'is_active': True,
+                'color': 'yellow'
             },
             {
                 'text': 'Входящие',
@@ -2523,28 +2672,24 @@ desk_config = {
                 'buttons': '',
                 'icon': 'far fa-plus-square',
                 'menu': top_menu,
-                'is_active': False
+                'is_active': False,
+                'color': 'red'
             },
             {
                 'text': 'Исходящие',
                 'icon': 'fas fa-tasks',
                 'table': tables['outbox'],
                 'menu': top_menu,
-                'is_active': False
-            },
-            {
-                'text': 'Задачи',
-                'table': tables['task'],
-                'icon': 'far fa-handshake',
-                'menu': top_menu,
-                'is_active': True
+                'is_active': False,
+                'color': 'blue'
             },
             {
                 'text': 'Протоколы',
                 'table': tables['protocol'],
                 'icon': 'far fa-envelope',
                 'menu': top_menu,
-                'is_active': False
+                'is_active': False,
+                'color': 'red'
             },
         ]
     }

@@ -3,11 +3,10 @@
     <v-data-table
       :headers="headers"
       :items="table"
-      sort-by="calories"
       class="elevation-1"
       :calculate-widths=true
       :loading=loading
-      loading-text="Загружаем данные ... Пожалуйста подождите"
+      loading-text="Загружаем данные ... Пожалуйста, подождите"
       @dblclick:row="editItem"
     >
       <template v-slot:top>
@@ -26,7 +25,7 @@
                 dark
                 class="mb-2"
                 v-bind="attrs"
-                v-on="on"
+                @click="addItem"
               >Экспорт</v-btn>
               <v-spacer></v-spacer>
               <v-btn
@@ -34,8 +33,8 @@
                 dark
                 class="mb-2"
                 v-bind="attrs"
-                v-on="on"
-              >{{ edit.title }}</v-btn>
+                @click="addItem"
+              >{{ new_edit.title }}</v-btn>
             </template>
           </v-dialog>
         </v-toolbar>
@@ -55,14 +54,23 @@
           mdi-delete
         </v-icon>
       </template>
-      <template v-slot:item.annex="{ item }">
-        {{ item.annex | limitStr }}
+      <template v-slot:item.link="{ item }">
+        <a :href="item.annex" target="_blank">{{ item.annex | limitStr }}</a>
       </template>
       <template v-slot:no-data>
-        <v-btn color="warning" @click="addItem">{{ edit.title }}</v-btn>
+        <v-btn color="warning" @click="addItem">{{ new_edit.title }}</v-btn>
       </template>
     </v-data-table>
-    <popupAdd :dialog=dialog :url=table_url :content=new_edit @closeItem="close"></popupAdd>
+    <popupAdd 
+      :dialog=dialog 
+      :url=table_url 
+      :content=new_edit 
+      @closeItem="close"
+      @itemsChanged="table_update" 
+      :update="update"
+      :actions="actions"
+    >
+    </popupAdd>
   </div>
 </template>
 
@@ -78,13 +86,15 @@ export default {
     headers: {},
     edit: {},
     table_url:{},
-    title: {}
+    title: {},
+    actions: {}
   },
 
   data:() => ({
     new_edit: {},
     dialog: false,
-    table: []
+    table: [],
+    update: false
   }),
 
   computed: {
@@ -97,35 +107,50 @@ export default {
   methods: {
 
     addItem(){
-      this.new_edit = this.edit
+      this.new_edit = this.deepClone(this.edit)
+      this.update = false
       this.dialog = true
     },
 
     editItem (event, item) {
-      let new_edit = this.edit
+      this.new_edit = this.deepClone(this.edit)
       const has = Object.prototype.hasOwnProperty;
       for (var field in item.item){
-        if (has.call(new_edit.fields, field)){
-          if ((typeof(item.item[field]) == "object")&&(item.item[field] !== null)){
-            let f = new_edit.fields[field].name.split("+")
-            let value = ""
-            f.forEach(element => {
-              value += " " + item.item[field][element.split('.')[1]]
-            });
-            new_edit.fields[field].value = value.trim()
-          } else {
-            new_edit.fields[field].value=item.item[field]
-          }        
+        if (has.call(this.new_edit.fields, field)){
+          this.new_edit.fields[field].value=item.item[field]   
         }
-          
       }
-      this.new_edit = this.edit
+      this.update = true
       this.dialog = true
     },
 
     close () {
       this.dialog = false
     },
+
+    deepClone: function (obj) {
+      const clObj = {};
+      for(const i in obj) {
+        if (obj[i] instanceof Object) {
+          clObj[i] = this.deepClone(obj[i]);
+          continue;
+        }
+        clObj[i] = obj[i];
+      }
+      return clObj;
+    },
+
+    table_update: function (){
+      let v = this
+      //Обновляем таблицу при обновлении компонента
+      this.$http
+      .get(this.table_url)
+      .then((response) => {
+        v.table = response.data
+      })
+      v.new_edit = this.deepClone(v.edit)
+      console.log("updated")
+     },
 
   },
 
@@ -138,23 +163,16 @@ export default {
       .then((response) => {
         v.table = response.data
       })
-      v.new_edit = v.edit
+      v.new_edit = this.deepClone(v.edit)
     }
   },
 
   mounted(){
-    let v = this
-    //Обновляем таблицу при создании компонента
-    this.$http
-    .get(this.table_url)
-    .then((response) => {
-      v.table = response.data
-    })
-    v.new_edit = v.edit
+    this.table_update()
   },
 
   filters: {
-    limitStr: function (value, n=50) {
+    limitStr: function (value, n=20) {
       if (value){
         if (value.length < n) return value;
         let symb = '...';

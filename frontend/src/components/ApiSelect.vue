@@ -6,7 +6,7 @@
       :placeholder=field.text
       :items=items
       :value="value"
-      @input="$emit('input', $event.id)"
+      @input="$emit('input', $event)"
       append-outer-icon="mdi-plus"
       @click:append-outer="AddItem"
       item-text="select_name"
@@ -76,7 +76,12 @@ export default {
           let n = v.field.name.split("+")
           let select_name = ""
           n.forEach(subname => {
-            select_name += " " + element[subname.trim()]
+            let val = element
+            let f = subname.trim().split(".")
+            f.forEach(subfield => {
+              val = val[subfield]
+            })
+            select_name += " " + val
           })
 
           element['select_name'] = select_name.trim()

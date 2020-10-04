@@ -117,7 +117,7 @@
     <v-main>
       <v-container fluid fill-height>
         <v-layout child-flex>
-          <List :table_url=table.url :headers=table.headers :edit=table.edit :title=table.title></List>
+          <List :table_url=table.url :headers=table.headers :edit=table.edit :title=table.title :actions=table.actions></List>
         </v-layout>
       </v-container>
     </v-main>

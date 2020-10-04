@@ -70,6 +70,14 @@ export default new Vuex.Store({
       state.status = 'save_item'
     },
 
+    update_item(state){
+      state.status = 'update_item'
+    },
+
+    action_handler(state){
+      state.status = 'action_handler'
+    },
+
     item_saved(state){
       state.status = 'item_saved'
     },
@@ -160,6 +168,40 @@ export default new Vuex.Store({
           'Content-Type': 'multipart/form-data'
         }
         axios.post(payload.url, payload.data)
+        .then(responce => {
+          commit('item_saved')
+          resolve(responce)
+        })
+        .catch(err => reject(err))
+      })
+    },
+
+    update_item({commit}, payload){
+      return new Promise((resolve, reject) => {
+        commit('update_item')
+        const token = localStorage.getItem('token')
+        axios.defaults.headers.common = {
+          Authorization: 'Token ' + token,
+          'Content-Type': 'multipart/form-data'
+        }
+        axios.put(payload.url + payload.id +"/", payload.data)
+        .then(responce => {
+          commit('item_saved')
+          resolve(responce)
+        })
+        .catch(err => reject(err))
+      })
+    },
+
+    action_handler({commit}, payload){
+      return new Promise((resolve, reject) => {
+        commit('action_handler')
+        const token = localStorage.getItem('token')
+        axios.defaults.headers.common = {
+          Authorization: 'Token ' + token,
+          'Content-Type': 'multipart/form-data'
+        }
+        axios.post(payload.url + payload.id +"/", payload.data)
         .then(responce => {
           commit('item_saved')
           resolve(responce)
