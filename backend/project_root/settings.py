@@ -47,7 +47,7 @@ MEDIA_URL = 'media/'
 STATIC_ROOT = public_root('static')
 STATIC_URL = 'static/'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition

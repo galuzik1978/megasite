@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  ikcikc:
+    image: ikcikc
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: /bin/bash
+    command: -c "cd /usr/src/ && gunicorn --bind 0.0.0.0:8000 project_root.wsgi"
+    ports:
+      - 8092:8000  
+    expose:
+      - 8000
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+    volumes:
+      - ./backend/:/usr/src/
+    environment:
+      - SQL_USER=${SQL_USER}
+      - SQL_PASSWORD=${SQL_PASSWORD}
+      - SQL_DATABASE=${SQL_DATABASE}
+      - SECRET_KEY=${SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - SQL_ENGINE=${SQL_ENGINE}
+      - SQL_HOST=${SQL_HOST}
+      - SQL_PORT=${SQL_PORT}
+  db:
+    image: postgres:12.0-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=${SQL_USER}
+      - POSTGRES_PASSWORD=${SQL_PASSWORD}
+      - POSTGRES_DB=${SQL_DATABASE}
+  nginx:
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    restart: always
+    ports:
+      - 8091:80
+    depends_on:
+      - ikcikc
+volumes:
+  postgres_data:
