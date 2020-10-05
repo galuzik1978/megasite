@@ -1,5 +1,6 @@
 import axios from 'axios'
 
-axios.defaults.baseURL='http://151.237.175.72:8092'
+axios.defaults.baseURL=process.env.VUE_APP_API_URL
+console.log('env', JSON.stringify(process.env))
 
 export default axios

@@ -109,7 +109,6 @@ class SenderSer(serializers.ModelSerializer):
         kwargs['partial'] = True
         super(SenderSer, self).__init__(*args, **kwargs)
 
-
     def create(self, validated_data):
         user_data = {
             'username': self.initial_data['email'],
@@ -117,8 +116,10 @@ class SenderSer(serializers.ModelSerializer):
             'last_name': self.initial_data['name'],
             'email': self.initial_data['email'],
         }
-        role = Role.objects.filter(pk=self.initial_data['role'])[0]
-        customer = Organisation.objects.filter(pk=self.initial_data['customer'])[0]
+        role_pk = json.loads(self.initial_data['role'])['id']
+        role = Role.objects.get(pk=role_pk)
+        customer_pk = json.loads(self.initial_data['customer'])['id']
+        customer = Organisation.objects.get(pk=customer_pk)
         user = User(** user_data)
         user.save()
         user.profile.surname = self.initial_data['profile.surname']
@@ -177,7 +178,13 @@ class ManagerSer(serializers.ModelSerializer):
         return user
 
 
+class MyTypeCustomerSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
 class CustomerSer(serializers.ModelSerializer):
+    type_customer = MyTypeCustomerSer()
 
     class Meta:
         model = Organisation
@@ -191,6 +198,16 @@ class CustomerSer(serializers.ModelSerializer):
         kwargs['partial'] = True
         super(CustomerSer, self).__init__(*args, **kwargs)
 
+    def create(self, validated_data):
+        pk = json.loads(self.initial_data['type_customer'])['id']
+        type_customer = TypeOrganisation.objects.get(pk=pk)
+        validated_data['type_customer'] = type_customer
+        res = super(CustomerSer, self).create(validated_data)
+        return res
+
+    def __call__(self, value):
+        res = super(CustomerSer, self).__call__(value)
+        return res
 
 class OrganisationSer(serializers.ModelSerializer):
     class Meta:
@@ -445,3 +462,12 @@ class UserAuthSer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['username']
+
+
+def validate(self, attrs):
+    res = super(CustomerSer, self).validate(attrs)
+    return res
+
+
+def validate_inn(attrs):
+    return attrs

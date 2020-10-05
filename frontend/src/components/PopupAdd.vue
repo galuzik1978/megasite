@@ -269,7 +269,11 @@ export default {
       let formData = new FormData();
       for (var field in this.fields) {
         if (this.fields[field].value){
-          formData.append(field, JSON.stringify(this.fields[field].value))     
+          if(typeof this.fields[field].value == 'object' && this.fields[field].type != 'file'){
+            formData.append(field, JSON.stringify(this.fields[field].value))
+          } else{
+            formData.append(field, this.fields[field].value)
+          }
         }
       }
       let v = this

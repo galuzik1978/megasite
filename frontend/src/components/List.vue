@@ -149,7 +149,6 @@ export default {
         v.table = response.data
       })
       v.new_edit = this.deepClone(v.edit)
-      console.log("updated")
      },
 
   },

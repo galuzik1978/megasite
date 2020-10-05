@@ -18,7 +18,9 @@
       :url=url 
       :content=edit 
       @closeItem="close"
-      @select_update="update"></PopupAdd>
+      @select_update="update"
+      @itemsChanged="update"
+    ></PopupAdd>
   </div>
 </template>
 
