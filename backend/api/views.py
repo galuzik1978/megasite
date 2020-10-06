@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.views.generic import TemplateView
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, authentication, filters, status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -31,6 +32,7 @@ class InboxApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Inbox.objects.all().order_by('date')
     serializer_class = InboxSer
+    filter_backends = [DjangoFilterBackend]
     filterset_fields = ['send_status__name', 'sender__id', 'customer_id']
 
 

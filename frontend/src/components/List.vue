@@ -2,6 +2,7 @@
   <div>
     <v-data-table
       :headers="headers"
+      :filters="filters"
       :items="table"
       class="elevation-1"
       :calculate-widths=true
@@ -84,6 +85,7 @@ export default {
 
   props: {
     headers: {},
+    filters: {},
     edit: {},
     table_url:{},
     title: {},
@@ -142,9 +144,18 @@ export default {
 
     table_update: function (){
       let v = this
+      let params = {}
+      if(typeof v.filters == "object"){
+        v.filters.forEach(filter => {
+          params[filter.field] = filter.value
+        });
+      }
       //Обновляем таблицу при обновлении компонента
       this.$http
-      .get(this.table_url)
+      .get(this.table_url, {
+          params:params
+        }
+      )
       .then((response) => {
         v.table = response.data
       })

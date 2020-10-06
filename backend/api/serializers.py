@@ -4,6 +4,7 @@ import requests
 from django.contrib.auth.models import User
 from django.db.models import Max
 from django.utils.datetime_safe import datetime
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, status
 from rest_framework.fields import empty
 from rest_framework.response import Response

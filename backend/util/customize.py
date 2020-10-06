@@ -1,167 +1,205 @@
+import copy
+
 COMPANY = "Запсиб-Экспертиза"
 LOGO = "Penrose-dreieck.svg"
 TITLE = "ИКЦ Запсиб-Экспертиза"
 Company_INN = "2540167061"
 Company_Phone = "79122700658"
 
+inbox = {
+    'name': 'inbox',
+    'url': 'api/inbox/',
+    'title': 'Входящие',
+    'ident': ['num', 'sender', 'title', 'date'],
+    'headers': [
+        {
+            'text': 'Номер',
+            'align': 'center',
+            'sortable': True,
+            'value': 'num',
+        },
+        {
+            'text': 'Дата',
+            'align': 'center',
+            'sortable': True,
+            'value': 'date',
+        },
+        {
+            'text': 'Отправитель',
+            'align': 'center',
+            'sortable': True,
+            'value': 'sender.first_name',
+        },
+        {
+            'text': 'Тема',
+            'align': 'center',
+            'sortable': True,
+            'value': 'title',
+        },
+        {
+            'text': 'Содержание',
+            'align': 'center',
+            'sortable': True,
+            'value': 'content',
+        },
+        {
+            'text': 'Приложение',
+            'align': 'center',
+            'sortable': True,
+            'value': 'link',
+        },
+        {
+            'text': 'Статус',
+            'align': 'center',
+            'sortable': True,
+            'value': 'send_status.name',
+        },
+        {
+            'text': 'Тип работы',
+            'align': 'center',
+            'sortable': True,
+            'value': 'type_work.name',
+        },
+        {
+            'text': 'Действия',
+            'align': 'center',
+            'sortable': False,
+            'value': 'actions',
+        }
+    ],
+    'edit': {
+        'title': 'Новый входящий',
+        'fields': {
+            'id': {
+                'type': 'hidden',
+                'name': 'id'
+            },
+            "date": {
+                'type': 'date',
+                'text': 'Дата',
+                'width': 6,
+                'icon': 'mdi-calendar',
+                'name': "date",
+                'value': ""
+            },
+            'sender': {
+                'type': 'select',
+                'text': 'Отправитель',
+                'width': 6,
+                'icon': 'fa fa-user',
+                'name': "first_name+last_name",
+                'value': "",
+                'subtable': 'sender',
+            },
+            "title": {
+                'type': 'text',
+                'text': 'Тема',
+                'width': 12,
+                'icon': 'mdi-tag-text-outline',
+                'name': "title",
+                'value': ""
+            },
+            "content": {
+                'type': 'textarea',
+                'text': 'Содержание',
+                'width': 12,
+                'icon': 'mdi-clipboard-text',
+                'name': "content",
+                'value': ""
+            },
+            "annex": {
+                'type': 'file',
+                'text': 'Приложение',
+                'width': 12,
+                'name': "annex",
+                'value': None
+            },
+            'send_status': {
+                'type': 'select',
+                'text': 'Статус',
+                'width': 6,
+                'icon': 'mdi-flag-checkered',
+                'name': "name",
+                'value': "",
+                'subtable': 'send_status',
+            },
+            'type_work': {
+                'type': 'select',
+                'text': 'Тип работы',
+                'width': 6,
+                'icon': 'mdi-clipboard-check',
+                'name': "name",
+                'value': "",
+                'subtable': 'type_work',
+            },
+            'type_letter': {
+                'type': 'select',
+                'text': 'Тип документа',
+                'width': 6,
+                'icon': 'fa fa-check-square-o',
+                'name': "name",
+                'value': "",
+                'subtable': 'type_letter',
+            }
+        },
+    },
+}
+
+new_inbox = copy.deepcopy(inbox)
+new_inbox['actions'] = {
+    'accept': {
+        'text': "Принять в работу",
+        'color': 'green',
+        'icon': 'mdi-account-multiple-plus',
+        'url': 'inbox/accept/',
+    },
+    'decline': {
+        'text': "Отклонить",
+        'color': 'red',
+        'icon': 'mdi-account-multiple-remove',
+        'url': 'inbox/decline/',
+    },
+    'Cancel': {
+        'text': "Закрыть",
+        'icon': 'mdi-close-circle-outline',
+    },
+}
+new_inbox['filters'] = [
+    {
+        'field': 'send_status__name',
+        'value': 'Получено'
+    }
+]
+new_inbox['title'] = "Новая заявка"
+new_inbox['name'] = 'new_inbox'
+new_inbox['headers'].pop()
+
+in_work_inbox = copy.deepcopy(inbox)
+in_work_inbox['filters'] = [
+    {
+        'field': 'send_status__name',
+        'value': 'В работе'
+    }
+]
+in_work_inbox['title'] = "Заявки в работе"
+in_work_inbox['name'] = 'in_work_inbox'
+in_work_inbox['actions'] = {
+    'accept': {
+        'text': "Оформить договор",
+        'color': 'green',
+        'icon': 'mdi-grease-pencil',
+    },
+    'Cancel': {
+        'text': "Закрыть",
+        'icon': 'mdi-close-circle-outline',
+    },
+}
+
 # Конфигурация таблиц и доступа к ним, в зависимости от контекста
 tables = {
-    'inbox': {
-        'name': 'inbox',
-        'url': 'api/inbox/',
-        'title': 'Входящие',
-        'ident': ['num', 'sender', 'title', 'date'],
-        'headers': [
-            {
-                'text': 'Номер',
-                'align': 'center',
-                'sortable': True,
-                'value': 'num',
-            },
-            {
-                'text': 'Дата',
-                'align': 'center',
-                'sortable': True,
-                'value': 'date',
-            },
-            {
-                'text': 'Отправитель',
-                'align': 'center',
-                'sortable': True,
-                'value': 'sender.first_name',
-            },
-            {
-                'text': 'Тема',
-                'align': 'center',
-                'sortable': True,
-                'value': 'title',
-            },
-            {
-                'text': 'Содержание',
-                'align': 'center',
-                'sortable': True,
-                'value': 'content',
-            },
-            {
-                'text': 'Приложение',
-                'align': 'center',
-                'sortable': True,
-                'value': 'link',
-            },
-            {
-                'text': 'Статус',
-                'align': 'center',
-                'sortable': True,
-                'value': 'send_status.name',
-            },
-            {
-                'text': 'Тип работы',
-                'align': 'center',
-                'sortable': True,
-                'value': 'type_work.name',
-            },
-            {
-                'text': 'Действия',
-                'align': 'center',
-                'sortable': False,
-                'value': 'actions',
-            }
-        ],
-        'edit': {
-            'title': 'Новый входящий',
-            'fields': {
-                'id': {
-                    'type': 'hidden',
-                    'name': 'id'
-                },
-                "date": {
-                    'type': 'date',
-                    'text': 'Дата',
-                    'width': 6,
-                    'icon': 'mdi-calendar',
-                    'name': "date",
-                    'value': ""
-                },
-                'sender': {
-                    'type': 'select',
-                    'text': 'Отправитель',
-                    'width': 6,
-                    'icon': 'fa fa-user',
-                    'name': "first_name+last_name",
-                    'value': "",
-                    'subtable': 'sender',
-                },
-                "title": {
-                    'type': 'text',
-                    'text': 'Тема',
-                    'width': 12,
-                    'icon': 'mdi-tag-text-outline',
-                    'name': "title",
-                    'value': ""
-                },
-                "content": {
-                    'type': 'textarea',
-                    'text': 'Содержание',
-                    'width': 12,
-                    'icon': 'mdi-clipboard-text',
-                    'name': "content",
-                    'value': ""
-                },
-                "annex": {
-                    'type': 'file',
-                    'text': 'Приложение',
-                    'width': 12,
-                    'name': "annex",
-                    'value': None
-                },
-                'send_status': {
-                    'type': 'select',
-                    'text': 'Статус',
-                    'width': 6,
-                    'icon': 'mdi-flag-checkered',
-                    'name': "name",
-                    'value': "",
-                    'subtable': 'send_status',
-                },
-                'type_work': {
-                    'type': 'select',
-                    'text': 'Тип работы',
-                    'width': 6,
-                    'icon': 'mdi-clipboard-check',
-                    'name': "name",
-                    'value': "",
-                    'subtable': 'type_work',
-                },
-                'type_letter': {
-                    'type': 'select',
-                    'text': 'Тип документа',
-                    'width': 6,
-                    'icon': 'fa fa-check-square-o',
-                    'name': "name",
-                    'value': "",
-                    'subtable': 'type_letter',
-                }
-            },
-        },
-        'actions': {
-            'accept': {
-                'text': "Принять в работу",
-                'color': 'green',
-                'icon': 'mdi-account-multiple-plus',
-                'url': 'inbox/accept/',
-            },
-            'decline': {
-                'text': "Отклонить",
-                'color': 'red',
-                'icon': 'mdi-account-multiple-remove',
-                'url': 'inbox/decline/',
-            },
-            'Cancel': {
-                'text': "Закрыть",
-                'icon': 'mdi-close-circle-outline',
-            },
-        }
-    },
+    'inbox': inbox,
+    'new_inbox': new_inbox,
+    'in_work_inbox': in_work_inbox,
     'outbox': {
         'name': 'outbox',
         'url': 'api/outbox/',
@@ -225,7 +263,7 @@ tables = {
                     'text': 'Адресат',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "customer",
+                    'name': "full_name",
                     'value': "",
                     'subtable': 'customer',
                 },
@@ -250,7 +288,7 @@ tables = {
                     'text': 'Тип письма',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "type_letter",
+                    'name': "name",
                     'value': "",
                     'subtable': 'type_letter',
                 },
@@ -1101,12 +1139,12 @@ tables = {
             },
         ],
         'edit': {
-            'id': {
+            'title': 'Новый контракт',
+            'fields': {
+                'id': {
                     'type': 'hidden',
                     'name': 'id'
                 },
-            'title': 'Новый контракт',
-            'fields': {
                 "date": {
                     'type': 'date',
                     'text': 'Дата заключения',
@@ -2667,7 +2705,7 @@ desk_config = {
                 'color': 'yellow'
             },
             {
-                'text': 'Входящие',
+                'text': 'Зарегистрировать',
                 'table': tables['inbox'],
                 'buttons': '',
                 'icon': 'far fa-plus-square',
@@ -2676,9 +2714,35 @@ desk_config = {
                 'color': 'red'
             },
             {
+                'text': 'Новые заявки',
+                'table': tables['new_inbox'],
+                'buttons': '',
+                'icon': 'mdi-file-question-outline',
+                'menu': top_menu,
+                'is_active': False,
+                'color': 'red'
+            },
+            {
+                'text': 'Заявки в работе',
+                'table': tables['in_work_inbox'],
+                'buttons': '',
+                'icon': 'mdi-account-hard-hat',
+                'menu': top_menu,
+                'is_active': False,
+                'color': 'red'
+            },
+            {
                 'text': 'Исходящие',
                 'icon': 'fas fa-tasks',
                 'table': tables['outbox'],
+                'menu': top_menu,
+                'is_active': False,
+                'color': 'blue'
+            },
+            {
+                'text': 'Оформить договор',
+                'icon': 'mdi-grease-pencil',
+                'table': tables['contract'],
                 'menu': top_menu,
                 'is_active': False,
                 'color': 'blue'
