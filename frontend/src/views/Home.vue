@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import main_screen from '../components/mian_screen'
+import main_screen from '../components/main_screen'
   export default {
     components:{
       main_screen

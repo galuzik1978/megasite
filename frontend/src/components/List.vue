@@ -142,14 +142,12 @@ export default {
       return clObj;
     },
 
-    table_update: function (){
-      let v = this
+    table_update() {
       let params = {}
-      if(typeof v.filters == "object"){
-        v.filters.forEach(filter => {
+      if(typeof this.filters == "object")
+        this.filters.forEach(filter => {
           params[filter.field] = filter.value
         });
-      }
       //Обновляем таблицу при обновлении компонента
       this.$http
       .get(this.table_url, {
@@ -157,28 +155,33 @@ export default {
         }
       )
       .then((response) => {
-        v.table = response.data
+        this.table = response.data
       })
-      v.new_edit = this.deepClone(v.edit)
+      this.new_edit = this.deepClone(this.edit)
      },
 
   },
 
   watch: {
-    table_url: function(new_url){
-      let v = this
-      //Обновляем таблицу при обновлении компонента
-      this.$http
-      .get(new_url)
-      .then((response) => {
-        v.table = response.data
-      })
-      v.new_edit = this.deepClone(v.edit)
+    table_url: {
+      immediate: true,
+      handler(new_url){
+        //Обновляем таблицу при обновлении компонента
+        let params = {}
+        if(typeof this.filters == "object")
+          this.filters.forEach(filter => {
+            params[filter.field] = filter.value
+          });
+        this.$http
+        .get(new_url, {
+          params:params
+        })
+        .then((response) => {
+          this.table = response.data
+        })
+        this.new_edit = this.deepClone(this.edit)
+      }
     }
-  },
-
-  mounted(){
-    this.table_update()
   },
 
   filters: {

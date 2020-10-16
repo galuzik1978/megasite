@@ -5,7 +5,8 @@
       :clipped="$vuetify.breakpoint.lgAndUp"
       app
     >
-      <v-list dense>
+      <!-- Главное меню -->
+      <v-list dense color="gray">
         <template v-for="item in items">
           <v-row
             v-if="item.heading"
@@ -61,6 +62,9 @@
             :key="item.text"
             link
             @click="change_data(item.table)"
+            :to="item.router===undefined ? '/' : item.router"
+            :color="item.color"
+            active-class="active-menu-btn"
           >
             <v-list-item-action style="width:24px">
               <v-icon>{{ item.icon }}</v-icon>
@@ -73,6 +77,7 @@
           </v-list-item>
         </template>
       </v-list>
+      <!-- /Главное меню -->
     </v-navigation-drawer>
 
     <v-app-bar
@@ -117,7 +122,7 @@
     <v-main>
       <v-container fluid fill-height>
         <v-layout child-flex>
-          <List 
+          <router-view
             :key=table.title
             :table_url=table.url 
             :headers=table.headers 
@@ -125,7 +130,7 @@
             :edit=table.edit 
             :title=table.title 
             :actions=table.actions
-          ></List>
+          ></router-view>
         </v-layout>
       </v-container>
     </v-main>
@@ -133,12 +138,7 @@
 </template>
 
 <script>
-import List from '../components/List.vue'
 export default {
-    components:{
-      List
-    },
-
     props: {
       dialog: Boolean,
       items: Array
@@ -174,8 +174,8 @@ export default {
       },
 
       change_data: function(data){
-        this.table_name = data.name
-        this.$store.dispatch('get_current_table', data.url)
+        if (data!==undefined)
+          this.table_name = data.name
       }
         
     },
@@ -185,3 +185,8 @@ export default {
     }
 }
 </script>
+<style scoped>
+.active-menu-btn{
+  opacity: 70%;
+}
+</style>

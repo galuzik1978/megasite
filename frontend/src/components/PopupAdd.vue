@@ -102,15 +102,15 @@
         </v-container>
 
         <v-card-actions v-if="actions && update"> 
-          <template v-for="action in actions"> 
+          <template v-for="(action, index) in actions"> 
             <v-spacer 
-              :key="'spacer' + action.url"
+              :key="'spacer' + index"
             ></v-spacer> 
             <v-btn 
               elevation="8" 
               :color="action.color"
               @click="handlerClickEvent(action.url)"
-              :key="'btn' + action.url"
+              :key="'btn' + index"
             > 
               <v-icon
                 left
@@ -153,7 +153,6 @@ export default {
   },
 
   props:{
-
     dialog:{
       type: Boolean,
       required: true

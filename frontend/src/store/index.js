@@ -116,6 +116,10 @@ export default new Vuex.Store({
             'title': title,
             'tables': tables
           })
+          axios.defaults.headers.common = {
+            Authorization: 'Token ' + token,
+          }
+          console.log("Token: " + token)
           resolve(resp)
         })
         .catch(err => {
@@ -145,8 +149,6 @@ export default new Vuex.Store({
     get_current_table({commit}, url){
       return new Promise((resolve, reject) => {
         commit('get_table_data')
-        const token = localStorage.getItem('token')
-        axios.defaults.headers.common = {Authorization: 'Token ' + token}
         axios({url: url, method: 'GET'})
         .then(resp => {
           const table = resp.data
@@ -162,11 +164,7 @@ export default new Vuex.Store({
     save_item({commit}, payload){
       return new Promise((resolve, reject) => {
         commit('save_item')
-        const token = localStorage.getItem('token')
-        axios.defaults.headers.common = {
-          Authorization: 'Token ' + token,
-          'Content-Type': 'multipart/form-data'
-        }
+        axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
         axios.post(payload.url, payload.data)
         .then(responce => {
           commit('item_saved')
@@ -179,11 +177,7 @@ export default new Vuex.Store({
     update_item({commit}, payload){
       return new Promise((resolve, reject) => {
         commit('update_item')
-        const token = localStorage.getItem('token')
-        axios.defaults.headers.common = {
-          Authorization: 'Token ' + token,
-          'Content-Type': 'multipart/form-data'
-        }
+        axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
         axios.put(payload.url + payload.id +"/", payload.data)
         .then(responce => {
           commit('item_saved')
@@ -196,11 +190,7 @@ export default new Vuex.Store({
     action_handler({commit}, payload){
       return new Promise((resolve, reject) => {
         commit('action_handler')
-        const token = localStorage.getItem('token')
-        axios.defaults.headers.common = {
-          Authorization: 'Token ' + token,
-          'Content-Type': 'multipart/form-data'
-        }
+        axios.defaults.headers.common['Content-Type'] = 'multipart/form-data'
         axios.post(payload.url + payload.id +"/", payload.data)
         .then(responce => {
           commit('item_saved')

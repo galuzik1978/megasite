@@ -190,3 +190,4 @@ class Device(models.Model):
 
     def __str__(self):
         return "{} от {} {}".format(self.num, self.date_act, self.object_exam)
+

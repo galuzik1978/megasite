@@ -3,18 +3,31 @@ import store from '../store/index'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
-
+import List from '../components/List.vue'
+import Video from '../components/Video.vue'
 
 Vue.use(VueRouter)
 
   const routes = [
   {
     path: '/',
-    name: 'Home',
     component: Home,
     meta: {
       requiredAuth: true
-    }
+    },
+    children: [
+      {
+        path: '',
+        name: 'Table',
+        component: List,
+        props: true
+      },
+      {
+        path:'video',
+        name: 'Video',
+        component: Video
+      },
+    ]
   },
   {
     path: '/login',

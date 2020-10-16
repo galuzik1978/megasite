@@ -1187,8 +1187,8 @@ tables = {
                     'value': ""
                 },
                 'inbox': {
-                    'type': 'date',
-                    'text': 'Дата заключения',
+                    'type': 'select',
+                    'text': 'Основание',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
                     'name': "date",
@@ -1204,6 +1204,21 @@ tables = {
                     'value': "",
                     'subtable': 'customer'
                 },
+                'object': {
+                    'type': 'select',
+                    'text': 'Объект',
+                    'width': 6,
+                    'icon': 'fa fa-hashtag',
+                    'name': "city+street+building",
+                    'value': "",
+                    'subtable': 'object',
+                    'filters': [
+                        {
+                            'field': 'customer',
+                            'value': 'customer.id'
+                        }
+                    ]
+                }
             },
         },
     },
@@ -2754,6 +2769,13 @@ desk_config = {
                 'menu': top_menu,
                 'is_active': False,
                 'color': 'red'
+            },
+            {
+                'text': 'Видео',
+                'icon': 'mdi-video-vintage',
+                'menu': top_menu,
+                'is_active': False,
+                'router': '/video'
             },
         ]
     }

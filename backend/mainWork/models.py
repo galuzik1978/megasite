@@ -1,6 +1,5 @@
 from django.db import models
-from postoffice.models import Inbox
-from postoffice.models import Contract
+from postoffice.models import Inbox, Contract
 from django.contrib.auth.models import User
 
 
