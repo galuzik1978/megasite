@@ -146,6 +146,7 @@ inbox = {
 }
 
 new_inbox = copy.deepcopy(inbox)
+# noinspection PyTypeChecker
 new_inbox['actions'] = {
     'accept': {
         'text': "Принять в работу",
@@ -188,6 +189,7 @@ in_work_inbox['actions'] = {
         'text': "Оформить договор",
         'color': 'green',
         'icon': 'mdi-grease-pencil',
+        'url': 'contract/create_by_inbox/',
     },
     'Cancel': {
         'text': "Закрыть",
@@ -333,20 +335,20 @@ tables = {
                     'type': 'hidden',
                     'name': 'id'
                 },
-                "first_name": {
+                "last_name": {
                     'type': 'text',
                     'text': 'Фамилия',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "first_name",
+                    'name': "last_name",
                     'value': ""
                 },
-                "name": {
+                "first_name": {
                     'type': 'text',
                     'text': 'Имя',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "name",
+                    'name': "first_name",
                     'value': ""
                 },
                 "profile.surname": {
@@ -354,10 +356,10 @@ tables = {
                     'text': 'Отчество',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "profile.surname",
+                    'name': "surname",
                     'value': ""
                 },
-                'customer': {
+                'profile.organisation': {
                     'type': 'select',
                     'text': 'Организация',
                     'width': 6,
@@ -366,7 +368,7 @@ tables = {
                     'value': "",
                     'subtable': 'customer',
                 },
-                "role": {
+                "profile.role": {
                     'type': 'select',
                     'text': 'Должность',
                     'width': 6,
@@ -1130,12 +1132,12 @@ tables = {
                 'text': 'Основание',
                 'align': 'center',
                 'sortable': True,
-                'value': 'inbox',
+                'value': 'inbox.title',
             }, {
                 'text': 'Заказчик',
                 'align': 'center',
                 'sortable': True,
-                'value': 'customer.fullname',
+                'value': 'customer.full_name',
             },
         ],
         'edit': {
@@ -1191,7 +1193,7 @@ tables = {
                     'text': 'Основание',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "date",
+                    'name': "date+title",
                     'value': "",
                     'subtable': 'inbox'
                 },
@@ -2172,15 +2174,6 @@ tables = {
                     'name': "mf_year",
                     'value': ""
                 },
-                'type_lift': {
-                    'type': 'select',
-                    'text': 'Дизайн лифта',
-                    'width': 6,
-                    'icon': 'fa fa-hashtag',
-                    'name': "name",
-                    'value': "",
-                    'subtable': 'type_lift'
-                },
                 "capacity": {
                     'type': 'number',
                     'text': 'Грузоподъемность',
@@ -2248,7 +2241,7 @@ tables = {
                 },
                 "auto_door": {
                     'type': 'checkbox',
-                    'text': 'Автоватические двери',
+                    'text': 'Автоматические двери',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
                     'name': "name",
@@ -2261,15 +2254,6 @@ tables = {
                     'icon': 'fa fa-hashtag',
                     'name': "num_lines",
                     'value': ""
-                },
-                'customer': {
-                    'type': 'select',
-                    'text': 'Заказчик',
-                    'width': 6,
-                    'icon': 'fa fa-hashtag',
-                    'name': "fullname",
-                    'value': "",
-                    'subtable': 'customer'
                 },
             },
         },
@@ -2763,10 +2747,20 @@ desk_config = {
                 'color': 'blue'
             },
             {
+                'text': 'Работы',
+                'table': tables['protocol'],
+                'icon': 'mdi-home-search-outline',
+                'menu': top_menu,
+                'router': '/',
+                'is_active': False,
+                'color': 'red'
+            },
+            {
                 'text': 'Протоколы',
                 'table': tables['protocol'],
                 'icon': 'far fa-envelope',
                 'menu': top_menu,
+                'router': '/',
                 'is_active': False,
                 'color': 'red'
             },
@@ -2775,8 +2769,10 @@ desk_config = {
                 'icon': 'mdi-video-vintage',
                 'menu': top_menu,
                 'is_active': False,
-                'router': '/video'
+                'router': '/video',
+                'color': 'red'
             },
-        ]
+        ],
+        'start_page': "inbox"
     }
 }

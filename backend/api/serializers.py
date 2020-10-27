@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
-from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract
+from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus
 from user_profile.models import Profile, Role
 from util.customize import Company_INN, Company_Phone
 
@@ -21,6 +21,7 @@ secret = '29a8f7d7d8528121a4ecdeddc9796dc68d1c40f5' # "Replace with Dadata secre
 
 
 class TypeCustomerSer(serializers.ModelSerializer):
+
     class Meta:
         model = TypeOrganisation
         fields = '__all__'
@@ -53,6 +54,7 @@ def get_organization_by_inn(inn, request):
                 'kpp': res['kpp'],
                 'ogrn': res['ogrn'],
                 'inn': res['inn'],
+                'address': res['address']['unrestricted_value'],
                 'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
                 # {"id":type_customer.pk,"name":type_customer.name}
             }
@@ -67,6 +69,7 @@ def get_organization_by_inn(inn, request):
                 'kpp': '',
                 'ogrn': res['ogrn'],
                 'inn': res['inn'],
+                'address': res['address']['unrestricted_value'],
                 'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
             }
         else:
@@ -86,7 +89,22 @@ class RoleSer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class OrganisationSer(serializers.ModelSerializer):
+    type_customer = TypeCustomerSer()
+
+    class Meta:
+        model = Organisation
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(OrganisationSer, self).__init__(*args, **kwargs)
+
+
 class ProfileSer(serializers.ModelSerializer):
+    organisation = OrganisationSer()
+    role = RoleSer()
+
     class Meta:
         model = Profile
         fields = "__all__"
@@ -184,8 +202,14 @@ class MyTypeCustomerSer(serializers.Serializer):
     name = serializers.CharField()
 
 
+class TypeWorkSer(serializers.ModelSerializer):
+    class Meta:
+        model = TypeWork
+        fields = '__all__'
+
+
 class CustomerSer(serializers.ModelSerializer):
-    type_customer = MyTypeCustomerSer()
+    type_customer = TypeCustomerSer()
 
     class Meta:
         model = Organisation
@@ -210,26 +234,10 @@ class CustomerSer(serializers.ModelSerializer):
         res = super(CustomerSer, self).__call__(value)
         return res
 
-class OrganisationSer(serializers.ModelSerializer):
-    class Meta:
-        model = Organisation
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        kwargs['partial'] = True
-        super(OrganisationSer, self).__init__(*args, **kwargs)
-
-
 class SendStatusSer(serializers.ModelSerializer):
     class Meta:
         model = SendStatus
         fields = ['id', 'name']
-
-
-class TypeWorkSer(serializers.ModelSerializer):
-    class Meta:
-        model = TypeWork
-        fields = '__all__'
 
 
 class TypeLetterSer(serializers.ModelSerializer):
@@ -313,16 +321,6 @@ class OutboxSer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
         super(OutboxSer, self).__init__(*args, **kwargs)
-
-
-class ContractSer(serializers.ModelSerializer):
-    class Meta:
-        model = Contract
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        kwargs['partial'] = True
-        super(ContractSer, self).__init__(*args, **kwargs)
 
 
 class StatusSer(serializers.ModelSerializer):
@@ -430,6 +428,10 @@ class AccuracyClassSer(serializers.ModelSerializer):
 
 
 class ObjectSer(serializers.ModelSerializer):
+    city_type = CityTypeSer()
+    street_type = StreetTypeSer()
+    lift_design = LiftDesignSer()
+
     class Meta:
         model = Object
         fields = '__all__'
@@ -437,6 +439,46 @@ class ObjectSer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
         super(ObjectSer, self).__init__(*args, **kwargs)
+
+    def create(self, validated_data):
+        city_type = CityType.objects.get(pk=json.loads(self.initial_data['city_type'])['id'])
+        street_type = StreetType.objects.get(pk=json.loads(self.initial_data['street_type'])['id'])
+        lift_design = LiftDesign.objects.get(pk=json.loads(self.initial_data['lift_design'])['id'])
+        object = Object.objects.create(
+            postcode=self.initial_data['postcode'],
+            region = self.initial_data['region'],
+            city_type = city_type,
+            city = self.initial_data['city'],
+            street_type = street_type,
+            street = self.initial_data['street'],
+            building = self.initial_data['building'],
+            lifts_count = self.initial_data['lifts_count'],
+            reg_num = self.initial_data['reg_num'],
+            mf_year = self.initial_data['mf_year'],
+            capacity = self.initial_data['capacity'],
+            floors = self.initial_data['floors'],
+            speed = self.initial_data['speed'],
+            maker = self.initial_data['maker'],
+            serial_number = self.initial_data['serial_number'],
+            date_exam = self.initial_data['date_exam'],
+            lift_design = lift_design,
+            freq = self.initial_data['freq'],
+            num_lines = self.initial_data['num_lines'],
+        )
+        return object
+
+    def update(self, instance, validated_data):
+
+        for attr, value in self.initial_data.lists():
+            try:
+                data = json.loads(value[0])
+                # data = data['id']
+                value = instance.__getattribute__(attr).__class__.objects.get(pk=data['id'])
+                setattr(instance, attr, value)
+            except AttributeError as err:
+                setattr(instance, attr, data)
+        instance.save()
+        return instance
 
 
 class ProtocolSer(serializers.ModelSerializer):
@@ -472,3 +514,55 @@ def validate(self, attrs):
 
 def validate_inn(attrs):
     return attrs
+
+
+class ContractSer(serializers.ModelSerializer):
+    customer = CustomerSer()
+    inbox = InboxSer()
+    type_work = TypeWorkSer()
+    object = ObjectSer()
+
+    class Meta:
+        model = Contract
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(ContractSer, self).__init__(*args, **kwargs)
+
+    def create(self, validated_data):
+        inbox = Inbox.objects.get(pk=json.loads(self.initial_data['inbox'])['id'])
+        customer = inbox.customer
+        unit = Object.objects.get(pk=json.loads(self.initial_data['object'])['id'])
+        unit.customer = customer
+        type_work = TypeWork.objects.get(pk=json.loads(self.initial_data['type_work'])['id'])
+        unit.save()
+        date = datetime.strptime(self.initial_data['date'],"%Y-%m-%d")
+        end_date = datetime.strptime(self.initial_data['end_date'],"%Y-%m-%d")
+        try:
+            num = Contract.objects.all().aggregate(Max('num'))['num__max'] + 1
+        except TypeError as err:
+            num = 1
+
+        init_status = "Новый договор"
+        try:
+            status = ContractStatus.objects.get(name=init_status)
+        except TypeLetter.DoesNotExist as err:
+            status = ContractStatus.objects.create(name=init_status)
+        contract = Contract.objects.create(
+            num=num,
+            date=date.date(),
+            end_date=end_date.date(),
+            type_work=type_work,
+            cost=self.initial_data['cost'],
+            external_num=self.initial_data['external_num'],
+            inbox=inbox,
+            customer=customer,
+            object=unit,
+            status=status
+        )
+        return contract
+
+    def to_internal_value(self, data):
+        res = super(ContractSer, self).to_internal_value(data)
+        return res

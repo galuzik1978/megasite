@@ -76,6 +76,13 @@ class Outbox(models.Model):
         return self.title
 
 
+class ContractStatus(models.Model):
+    name = models.CharField(max_length=25, unique=True, verbose_name="Статус договора")
+
+    def __str__(self):
+        return self.name
+
+
 class Contract(models.Model):
     num = models.SmallIntegerField(verbose_name="Номер договора", unique=True)
     date = models.DateField(verbose_name="Дата заключения")
@@ -87,3 +94,4 @@ class Contract(models.Model):
     customer = models.ForeignKey(Organisation, on_delete=models.PROTECT, verbose_name="Заказчик")
     object = models.ForeignKey(Object, on_delete=models.PROTECT, verbose_name="Объект контроля", null=True,
         blank=True,)
+    status = models.ForeignKey(ContractStatus, on_delete=models.PROTECT, verbose_name="Статус договора")

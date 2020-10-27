@@ -5,17 +5,24 @@
       :prepend-icon=field.icon 
       :placeholder=field.text
       :items=items
-      :value="value"
+      :value="val"
       @input="$emit('input', $event)"
-      append-outer-icon="mdi-plus"
-      @click:append-outer="AddItem"
       item-text="select_name"
       item-value="id"
       return-object
-    ></v-select>
+    >
+    <template v-slot:append-outer>
+      <v-icon v-if="value" @click="EditItem(value)">
+        mdi-pencil
+      </v-icon>
+      <v-icon @click="AddItem">
+        mdi-plus
+      </v-icon>
+    </template>
+    </v-select>
     <PopupAdd 
       :dialog=dialog 
-      :url=url 
+      :table=table  
       :content=edit 
       @closeItem="close"
       @select_update="update"
@@ -32,14 +39,11 @@ export default {
 
   props: {
     field: Object,
-    value:{}
+    value:{},
+    table:{}
   },
 
   computed:{
-
-    edit: function(){
-      return this.$store.state.tables[this.field.subtable].edit
-    },
 
     url: function(){
       return this.$store.state.tables[this.field.subtable].url
@@ -55,13 +59,48 @@ export default {
     fields: [],
     dialog: false,
     items: [],
-    val: ""
+    val: "",
+    edit:{}
   }),
 
   methods:{
 
     AddItem: function(){
       this.dialog = true
+    },
+
+    EditItem (item) {
+      this.edit = this.deepClone(this.table.edit)
+      if (typeof item == "number"){
+        this.edit.fields.id.value = item
+      } else {
+        const has = Object.prototype.hasOwnProperty;
+        for (var field in item){
+          if (has.call(this.edit.fields, field)){
+            this.edit.fields[field].value=item[field]   
+          } else if (typeof item[field] === "object") {
+            for (var sub_field in item[field]){
+              if (has.call(this.edit.fields, `${field}.${sub_field}`)){
+                this.edit.fields[`${field}.${sub_field}`].value=item[field][sub_field]   
+              }
+            }
+          } 
+        }
+      }
+      this.update = true
+      this.dialog = true
+    },
+
+    deepClone: function (obj) {
+      const clObj = {};
+      for(const i in obj) {
+        if (obj[i] instanceof Object) {
+          clObj[i] = this.deepClone(obj[i]);
+          continue;
+        }
+        clObj[i] = obj[i];
+      }
+      return clObj;
     },
 
     close () {
@@ -89,14 +128,15 @@ export default {
           element['select_name'] = select_name.trim()
           v.items.push(element)
         });
+        v.val = v.field.value
       })
-      this.val = this.field.value
     }
 
   },
 
-  mounted(){
+  created(){
     //Обновляем таблицу при создании компонента
+    this.edit=this.$store.state.tables[this.field.subtable].edit
     this.update()
   },
 

@@ -1,177 +1,177 @@
 <template>
-  <div>
-    <main_screen 
-    :items="items"
-    v-if="loading"
-    ></main_screen>
-  </div>
+  <!-- App.vue -->
+  <v-app>
+    <v-navigation-drawer 
+      v-model="drawer"
+      :clipped="$vuetify.breakpoint.lgAndUp"
+      app
+      permanent
+      expand-on-hover
+    >
+      <!-- Главное меню -->
+      <v-list dense color="gray">
+        <v-list-item-group
+          v-model="selectedItem"
+          color="primary"
+        >
+          <v-list-item
+            v-for="(item, i) in items"
+            :key="i"
+            link
+            @click="change_data(item.table, item.router)"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                {{ item.text }}
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+           <v-list-item
+            :key="100"
+            link
+            @click="change_data('undefined', '/query')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-file-question-outline</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Заполнить заявку
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list-item-group>
+      </v-list>
+      <!-- /Главное меню -->
+    </v-navigation-drawer>
+
+    <v-app-bar 
+      :clipped-left="$vuetify.breakpoint.lgAndUp"
+      app
+      color="primary"
+      dark
+    >
+      <!-- -->
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-img
+        class="mx-2"
+        :src="logo"
+        max-height="40"
+        max-width="40"
+        contain
+      ></v-img>
+      <v-toolbar-title
+        style="width: 300px"
+        class="ml-0 pl-4"
+      >
+        <span class="hidden-sm-and-down">{{title}}</span>
+      </v-toolbar-title>
+      <v-text-field
+        flat
+        solo-inverted
+        hide-details
+        prepend-inner-icon="mdi-magnify"
+        label="Search"
+        class="hidden-sm-and-down"
+      ></v-text-field>
+      <v-spacer></v-spacer>
+      <v-btn icon>
+        <v-icon>mdi-apps</v-icon>
+      </v-btn>
+      <v-btn icon>
+        <v-icon>mdi-bell</v-icon>
+      </v-btn>
+      <v-btn icon @click="logout">
+        <v-icon>mdi-exit-run</v-icon>
+      </v-btn>
+    </v-app-bar>
+    
+    <!-- Sizes your content based upon application components -->
+    <v-main>
+
+      <!-- Provides the application the proper gutter -->
+      <v-container fluid>
+        <!-- If using vue-router -->
+        <router-view></router-view>
+      </v-container>
+    </v-main>
+
+    <v-footer app class="myFont">
+      <!-- -->
+      <v-spacer></v-spacer>
+      <v-banner
+        elevation="4"
+        icon="mdi-copyright"
+        single-line
+      >Copyright by ИКЦ Запсиб-Экспертиза</v-banner>
+    </v-footer>
+  </v-app>
 </template>
 
 <script>
-import main_screen from '../components/main_screen'
+
   export default {
     components:{
-      main_screen
-    },
-    props: {
       
     },
+
     data: () => ({
-    
-    table_url: 'api/inbox/',
-    table_name: '',
-    content: {
-      title: 'Добавить контакт',
-      fields: [
-        {
-          type: 'text',
-          text: 'Имя',
-          width: 12,
-          icon: 'fa fa-user',
-          value: ""
-        },
-        {
-          type: 'text',
-          text: 'Компания',
-          width: 6,
-          icon: 'mdi-mail',
-          value: ""
-        },
-        {
-          type: 'text',
-          text: 'Должность',
-          width: 6,
-          value: ""
-        },
-        {
-          type: 'email',
-          text: 'E-mail',
-          width: 6,
-          icon: 'mdi-mail',
-          value: ""
-        },
-        {
-          type: 'text',
-          text: 'Телефон',
-          width: 6,
-          icon: 'mdi-phone',
-          value: ""
-        },
-        {
-          type: 'text',
-          text: 'Город',
-          width: 6,
-          icon: 'mdi-phone',
-          value: "Лондон"
-        },
-      ]
-    },
-    menus: this,
-    headers: [
-      {
-        text: 'Номер',
-        align: 'center',
-        sortable: true,
-        value: 'num',
+        drawer: false,
+        table_name: '',
+        selectedItem: 0
+    }),
+
+    computed: {
+
+      title() {
+        return this.$store.state.title
       },
-      { text: 'Дата', value: 'date' },
-      { text: 'Отправитель', value: 'sender.first_name' },
-      { text: 'Тема', value: 'title' },
-      { text: 'Содержание', value: 'content' },
-      { text: 'Приложение', value: 'annex' },
-      { text: 'Статус', value: 'send_status.name' },
-      { text: 'Тип работы', value: 'type_work.name' },
-      { text: 'Действия', value: 'actions', sortable: false }
-    ],
-    edit: {
-      title: 'Добавить контакт',
-      fields:[
-        {
-          type: 'text',
-          text: 'Номер',
-          width: 6,
-          icon: 'fa fa-hashtag',
-          name: "num",
-          value: ""
-        },
-        {
-          type: 'date',
-          text: 'Дата',
-          width: 6,
-          icon: 'mdi-calendar',
-          name: "num",
-          value: ""
-        },
-        {
-          type: 'text',
-          text: 'Отправитель',
-          width: 6,
-          icon: 'fa fa-user',
-          name: "num",
-          value: "",
-          url: '/api/sender/',
-          subname: 'last_name + first_name'
-        },
-        {
-          type: 'text',
-          text: 'Тема',
-          width: 12,
-          icon: 'mdi-tag-text-outline',
-          name: "title",
-          value: ""
-        },
-        {
-          type: 'textarea',
-          text: 'Содержание',
-          width: 12,
-          icon: 'mdi-clipboard-text',
-          name: "content",
-          value: ""
-        },
-        {
-          type: 'file',
-          text: 'Приложение',
-          width: 12,
-          name: "annex"
-        },
-        {
-          type: 'select',
-          text: 'Статус',
-          width: 6,
-          icon: 'mdi-flag-checkered',
-          name: "send_status",
-          value: "",
-          url: '/api/send_status/',
-          subname: 'name'
-        },
-        {
-          type: 'text',
-          text: 'Тип работы',
-          width: 6,
-          icon: 'mdi-clipboard-check',
-          name: "type_work",
-          value: "",
-          url: '/api/type_work/',
-          subname: 'name'
+
+      items() {
+        return this.$store.state.desktop
+      },
+      
+      loading() {
+        return this.$store.state.status == 'loading' ? false : true
+      },
+
+      logo(){
+        return require("@/assets/" + this.$store.state.logo)
+      },
+
+    },
+
+    methods: {
+
+      logout: function() {
+        this.$store.dispatch('logout')
+        .then(() => {
+            this.$router.push('/login')
+        })
+      },
+
+      change_data: function(data, path){
+        if (data!==undefined)
+          this.$store.dispatch('change_data', {'name': data.name})
+        path = path===undefined ? '/' : path
+        if (this.$route.path != path) {
+            this.$router.push(path);
         }
-      ],
-    },
-  }),
-  computed: {
+      },
 
-    title() {
-      return this.$store.state.title
     },
 
-    items() {
-      return this.$store.state.desktop
-    },
-    
-    loading() {
-      return this.$store.state.status == 'loading' ? false : true
-    }
-  },
-  beforeMount() { document.title = this.title },
-  beforeUpdate() { document.title = this.title }
+    beforeMount() { document.title = this.title },
+    beforeUpdate() { document.title = this.title }
 }
 </script>
+<style>
+.myFont {
+  font-size: 0.8em; 
+}
+</style>

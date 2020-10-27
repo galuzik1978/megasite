@@ -20,8 +20,9 @@ export default new Vuex.Store({
     user: localStorage.getItem('user'),
     tables: localStorage.getItem('tables') === "undefined" ? 
       "" : JSON.parse(localStorage.getItem('tables')),
+    table_name: localStorage.getItem('table_name'),
     current_table: [],
-    users: []
+    users: [],
   },
 
   mutations: {
@@ -40,6 +41,7 @@ export default new Vuex.Store({
       state.role = data.role
       state.title = data.title
       state.tables = data.tables
+      state.table_name = data.table_name
     },
 
     auth_error(state){
@@ -81,6 +83,10 @@ export default new Vuex.Store({
     item_saved(state){
       state.status = 'item_saved'
     },
+    
+    change_data(state, table_name){
+      state.table_name = table_name.name
+    }
 
   },
   actions: {
@@ -98,6 +104,9 @@ export default new Vuex.Store({
           const role = resp.data.role
           const title = resp.data.title
           const tables = resp.data.tables
+          let keys = Object.keys(tables)
+          const table_name = keys[0]
+
           localStorage.setItem('token', token)
           localStorage.setItem('user', user)
           localStorage.setItem('company', company)
@@ -106,6 +115,7 @@ export default new Vuex.Store({
           localStorage.setItem('role', role)
           localStorage.setItem('title', title)
           localStorage.setItem('tables', JSON.stringify(tables))
+          localStorage.setItem('table_name', table_name)
           commit('auth_success', {
             'user': user,
             'token': token,
@@ -114,7 +124,8 @@ export default new Vuex.Store({
             'logo': logo,
             'role': role,
             'title': title,
-            'tables': tables
+            'tables': tables,
+            'table_name': table_name
           })
           axios.defaults.headers.common = {
             Authorization: 'Token ' + token,
@@ -205,6 +216,10 @@ export default new Vuex.Store({
       .then(users => {
         commit('set_users', {users})
       })
+    },
+
+    change_data({commit}, payload){
+      commit('change_data', {"name": payload.name})
     }
 
   },

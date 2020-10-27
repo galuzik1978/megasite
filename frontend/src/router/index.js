@@ -5,6 +5,7 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import List from '../components/List.vue'
 import Video from '../components/Video.vue'
+import Query from '../views/Query.vue'
 
 Vue.use(VueRouter)
 
@@ -26,6 +27,11 @@ Vue.use(VueRouter)
         path:'video',
         name: 'Video',
         component: Video
+      },
+      {
+        path:'query',
+        name: 'Query',
+        component: Query
       },
     ]
   },

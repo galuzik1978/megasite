@@ -8,12 +8,9 @@
       persistent
     >
       <v-card>
-        <v-card-title class="grey darken-2">
+        <v-card-title class="blue lighten-2">
           {{ content.title }}
         </v-card-title>
-        <v-list-item-subtitle>
-          {{ save_err }}
-        </v-list-item-subtitle>
         <v-container>
           <v-row class="mx-2">
             <template v-for="(field, index) in fields">
@@ -24,6 +21,7 @@
                   :field=fields[index] 
                   :key=fields[index].name
                   :value=fields[index].value
+                  :table=get_subtable(fields[index].subtable)
                   @input="changeSelect(field, $event)"
                 ></ApiSelect>
 
@@ -47,7 +45,7 @@
                       v-on="on"
                     ></v-text-field>
                   </template>
-                  <v-date-picker v-model=fields[index].value @input="menu[index] = false, cnangeItem(fields[index])"></v-date-picker>
+                  <v-date-picker locale="ru" v-model=fields[index].value @input="menu[index] = false, cnangeItem(fields[index])"></v-date-picker>
                 </v-menu>
 
                 <v-textarea
@@ -88,6 +86,7 @@
                   v-else
                   :prepend-icon=field.icon 
                   :placeholder=field.text
+                  :label=field.text
                   v-model=fields[index].value
                   :type=field.type
                   @change="handleFunctionCall(field.callback, $event), cnangeItem(fields[index])"
@@ -101,8 +100,8 @@
           </v-row>
         </v-container>
 
-        <v-card-actions v-if="actions && update"> 
-          <template v-for="(action, index) in actions"> 
+        <v-card-actions v-if="table.actions && update"> 
+          <template v-for="(action, index) in table.actions"> 
             <v-spacer 
               :key="'spacer' + index"
             ></v-spacer> 
@@ -128,7 +127,7 @@
             elevation="8" 
             @click="close"
           >Отмена</v-btn>
-          <v-btn v-if="update"
+          <v-btn v-if="fields.id.value!==undefined"
             color="primary"
             @click="updateItem"
             elevation="8" 
@@ -141,6 +140,36 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+    <!-- Окно отбражения ошибок обмена с сайтом -->
+    <v-row justify="center">
+      <v-dialog
+        v-model="alarm"
+        scrollable
+        max-width="80%"
+      >  
+        <v-card>
+          <v-card-title class="headline grey lighten-2">
+            Ошибка получения данных
+          </v-card-title>
+  
+          <v-card-text v-html="alarm_text">            
+          </v-card-text>
+  
+          <v-divider></v-divider>
+  
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              text
+              @click="alarm = false"
+            >
+              Закрыть
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-row>
   </div>
 </template>
 
@@ -160,85 +189,22 @@ export default {
 
     content: {
       type: Object,
+      required: true,
       default: function () {
         return {
           title: 'Добавить контакт',
-          fields: [
-            {
-              type: 'text',
-              text: 'Имя',
-              width: 12,
-              icon: 'fa fa-user',
-              name: "name",
-              value: ""
-            },
-            {
-              type: 'select',
-              text: 'Компания',
-              width: 6,
-              icon: 'mdi-mail',
-              name: 'company',
-              value: "",
-              items: [
-                'Компания 1',
-                'Компания 2',
-                'Компания 3'
-              ]
-            },
-            {
-              type: 'text',
-              text: 'Должность',
-              width: 6,
-              name: 'role',
-              value: ""
-            },
-            {
-              type: 'email',
-              text: 'E-mail',
-              width: 12,
-              icon: 'mdi-mail',
-              name: 'email',
-              value: ""
-            },
-            {
-              type: 'text',
-              text: 'Телефон',
-              width: 6,
-              icon: 'mdi-phone',
-              name: 'phone',
-              value: ""
-            },
-            {
-              type: 'date',
-              text: 'Дата',
-              width: 6,
-              icon: 'mdi-calendar',
-              name: 'date',
-              value: ""
-            },
-            {
-              type: 'textarea',
-              text: 'Содержание',
-              width: 12,
-              icon: 'mdi-clipboard-text',
-              name: 'content',
-              value: ""
-            },
-            {
-              type: 'file',
-              text: 'Приложение',
-              width: 12,
-              icon: 'mdi-clipboard-text',
-              name: 'annex',
-              value: ""
-            },
-          ]
+          fields: {
+            "id":{
+              "value":undefined
+            }
+          }
         }
       }
     },
 
-    url: {
-      type: String,
+    table:{
+      type: Object,
+      required: true
     },
 
     update:{
@@ -246,20 +212,26 @@ export default {
       default: false
     },
     
-    actions: {
-      type: Object,
-    }
   },
 
   computed: {
+    fields(){
+      if (this.content.fields === undefined){
+        return {"id": {"value":undefined}}
+      }
+      return this.content.fields
+    }
   },
 
   data: () => ({
     date: new Date().toISOString().substr(0, 10),
     menu: [],
-    fields:[],
     err:"",
-    save_err:""
+    save_err:"",
+    alarm:false,
+    alarm_text:"",
+    dialogm1: '',
+    dialogm: false,
   }),
 
   methods: {
@@ -276,13 +248,15 @@ export default {
         }
       }
       let v = this
-      this.$store.dispatch('save_item', {'url':this.url, 'data':formData})
+      this.$store.dispatch('save_item', {'url':this.table.url, 'data':formData})
       .then(() => {
         v.$emit('itemsChanged')
         v.close()
       })
       .catch(error => {
         v.save_err = error.response.data
+        v.alarm_text = `<h2> "${error}" </h2> "${error.response.data}"`
+        v.alarm = true  
       })
     },
 
@@ -295,17 +269,23 @@ export default {
       let formData = new FormData();
       for (var field in this.fields) {
         if (this.fields[field].change){
-          formData.append(field, JSON.stringify(this.fields[field].value))     
+          if(typeof this.fields[field].value == 'object' && this.fields[field].type != 'file'){
+            formData.append(field, JSON.stringify(this.fields[field].value))
+          } else{
+            formData.append(field, this.fields[field].value)
+          }
         }
       }
       let v = this
-      this.$store.dispatch('update_item', {'url':this.url, 'id':v.fields.id.value, 'data':formData})
+      this.$store.dispatch('update_item', {'url':this.table.url, 'id':v.fields.id.value, 'data':formData})
       .then(() => {
         v.$emit('itemsChanged')
         v.close()
       })
       .catch(error => {
         v.save_err = error.response.data
+        v.alarm = true
+        v.alarm_text = error.response.data
       })
     },
 
@@ -363,22 +343,24 @@ export default {
       } else {
         let v = this
         this.$store.dispatch('action_handler', {'url': url, 'id': v.fields.id.value})
-        .then(() => {
-          v.$emit('itemsChanged')
-          v.close()
+        .then(resp => {
+          const table = resp.data
+          const content = table.edit
+          v.$emit('itemsChanged', table, content)
         })
         .catch(error => {
           v.save_err = error.response.data
         })
       }
 
+    },
+
+    get_subtable(subtible){
+      return this.$store.state.tables[subtible]
     }
 
   },
   
-  updated(){
-    this.fields = this.content.fields
-  }
 }
 </script>
 

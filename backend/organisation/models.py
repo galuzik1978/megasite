@@ -127,7 +127,7 @@ class Object(models.Model):
     freq = models.SmallIntegerField("частота", blank=True, null=True)
     auto_door = models.SmallIntegerField("Автоматические двери", blank=True, null=True)
     num_lines = models.SmallIntegerField("Кол-во линий", blank=True, null=True)
-    customer = models.ForeignKey(Organisation, on_delete=models.PROTECT)
+    customer = models.ForeignKey(Organisation, on_delete=models.PROTECT, blank=True, null=True)
 
     def __str__(self):
         return "{} {} {}".format(self.city,self.street, self.building)

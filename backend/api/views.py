@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.http import JsonResponse, FileResponse
 from django.views.generic import TemplateView
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, authentication, filters, status
@@ -21,6 +22,7 @@ from organisation.models import Organisation, TypeOrganisation, CityType, Street
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract
 from user_profile.models import Profile, Role
+from util.customize import tables
 
 
 class MainPageView(FormMenuMixin, TemplateView):
@@ -111,6 +113,10 @@ class ContractApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Contract.objects.all()
     serializer_class = ContractSer
+
+    def post(self, *args, **kwargs):
+        res = super(ContractApiView, self).post(*args, **kwargs)
+        return res
 
 
 class StatusApiView(viewsets.ModelViewSet):
@@ -335,3 +341,32 @@ class InboxAcceptView(APIView):
         serializer = InboxSer(inbox)
         response_status = status.HTTP_200_OK
         return Response(serializer.data, status=response_status)
+
+
+class CreateContractByInboxView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def post(request, *args, **kwargs):
+        inbox = Inbox.objects.get(pk=kwargs['inbox'])
+        table = tables['contract']
+        table['edit']['fields']['inbox']['value'] = InboxSer(inbox).data
+        table['edit']['fields']['customer']['value'] = CustomerSer(inbox.customer).data
+        table['edit']['fields']['type_work']['value'] = TypeWorkSer(inbox.type_work).data
+        return JsonResponse(table)
+
+
+class GetBlankView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+
+    @staticmethod
+    def post(request, *args, **kwargs):
+        f = FileResponse(open("../Основные функции.ods", 'rb'))
+        return f
+
+    @staticmethod
+    def get(request, *args, **kwargs):
+        return FileResponse("Основные функции.ods")

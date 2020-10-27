@@ -1,9 +1,8 @@
 <template>
   <div>
     <v-data-table
-      :headers="headers"
-      :filters="filters"
-      :items="table"
+      :items="items"
+      :headers="table.headers"
       class="elevation-1"
       :calculate-widths=true
       :loading=loading
@@ -11,8 +10,8 @@
       @dblclick:row="editItem"
     >
       <template v-slot:top>
-        <v-toolbar flat color="green">
-          <v-toolbar-title>{{ title }}</v-toolbar-title>
+        <v-toolbar flat color="success">
+          <v-toolbar-title>{{ table.title }}</v-toolbar-title>
           <v-divider
             class="mx-4"
             inset
@@ -35,7 +34,7 @@
                 class="mb-2"
                 v-bind="attrs"
                 @click="addItem"
-              >{{ new_edit.title }}</v-btn>
+              >{{ table.edit.title }}</v-btn>
             </template>
           </v-dialog>
         </v-toolbar>
@@ -44,7 +43,7 @@
         <v-icon
           small
           class="mr-2"
-          @click="editItem(item)"
+          @click="editItem ($event, item)"
         >
           mdi-pencil
         </v-icon>
@@ -59,17 +58,16 @@
         <a :href="item.annex" target="_blank">{{ item.annex | limitStr }}</a>
       </template>
       <template v-slot:no-data>
-        <v-btn color="warning" @click="addItem">{{ new_edit.title }}</v-btn>
+        <v-btn color="warning" @click="addItem">{{ table.edit.title }}</v-btn>
       </template>
     </v-data-table>
     <popupAdd 
       :dialog=dialog 
-      :url=table_url 
-      :content=new_edit 
+      :table=table 
+      :content=content 
       @closeItem="close"
-      @itemsChanged="table_update" 
+      @itemsChanged="table_update"
       :update="update"
-      :actions="actions"
     >
     </popupAdd>
   </div>
@@ -83,43 +81,54 @@ export default {
     popupAdd
   },
 
-  props: {
-    headers: {},
-    filters: {},
-    edit: {},
-    table_url:{},
-    title: {},
-    actions: {}
-  },
-
   data:() => ({
-    new_edit: {},
+    content:{},
     dialog: false,
-    table: [],
-    update: false
+    update: false,
+    items:[]
   }),
 
   computed: {
 
     loading() {
       return this.$store.getters.table_loading
-    }
+    },
+
+    table_name() {
+      return this.$store.state.table_name
+    },
+
+    table_url(){
+      return this.$store.state.tables[this.table_name].url
+    },
+
+    table(){
+      return this.$store.state.tables[this.table_name]
+    },
+
   },
 
   methods: {
 
     addItem(){
-      this.new_edit = this.deepClone(this.edit)
+      this.content = this.deepClone(this.table.edit)
       this.update = false
       this.dialog = true
     },
 
     editItem (event, item) {
-      this.new_edit = this.deepClone(this.edit)
+      this.content = this.deepClone(this.table.edit)
+      var tmp
+      if (item.item == undefined) {
+        tmp = item
+      } else {
+        tmp = item.item
+      }
+      
       const has = Object.prototype.hasOwnProperty;
-      for (var field in item.item){
-        if (has.call(this.new_edit.fields, field)){
-          this.new_edit.fields[field].value=item.item[field]   
+      for (var field in tmp){
+        if (has.call(this.content.fields, field)){
+          this.content.fields[field].value=tmp[field]   
         }
       }
       this.update = true
@@ -142,44 +151,50 @@ export default {
       return clObj;
     },
 
-    table_update() {
+    table_update(table, content) {
       let params = {}
-      if(typeof this.filters == "object")
-        this.filters.forEach(filter => {
+      if(typeof this.table.filters == "object")
+        this.table.filters.forEach(filter => {
           params[filter.field] = filter.value
         });
-      //Обновляем таблицу при обновлении компонента
-      this.$http
-      .get(this.table_url, {
-          params:params
-        }
-      )
-      .then((response) => {
-        this.table = response.data
-      })
-      this.new_edit = this.deepClone(this.edit)
-     },
+      if (typeof content == "undefined") {
+        //Обновляем таблицу при обновлении компонента
+        this.$http
+        .get(this.table_url, {
+            params:params
+          }
+        )
+        .then((response) => {
+          this.items = response.data
+        })
+        this.content = this.deepClone(this.table.edit)
+      } else {
+        this.$store.dispatch('change_data', {'name': table.name})
+        this.content = this.deepClone(content)
+        this.dialog = true 
+      }
+    },
 
   },
 
   watch: {
-    table_url: {
+    table_name: {
       immediate: true,
-      handler(new_url){
+      handler(){
         //Обновляем таблицу при обновлении компонента
         let params = {}
-        if(typeof this.filters == "object")
-          this.filters.forEach(filter => {
+        if(typeof this.table.filters == "object")
+          this.table.filters.forEach(filter => {
             params[filter.field] = filter.value
           });
         this.$http
-        .get(new_url, {
+        .get(this.table_url, {
           params:params
         })
         .then((response) => {
-          this.table = response.data
+          this.items = response.data
         })
-        this.new_edit = this.deepClone(this.edit)
+        this.popup_key = this.table_url
       }
     }
   },

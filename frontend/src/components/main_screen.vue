@@ -8,62 +8,11 @@
       <!-- Главное меню -->
       <v-list dense color="gray">
         <template v-for="item in items">
-          <v-row
-            v-if="item.heading"
-            :key="item.heading"
-            align="center"
-          >
-            <v-col cols="6">
-              <v-subheader v-if="item.heading">
-                {{ item.heading }}
-              </v-subheader>
-            </v-col>
-            <v-col
-              cols="6"
-              class="text-center"
-            >
-              <a
-                href="#!"
-                class="body-2 black--text"
-              >EDIT</a>
-            </v-col>
-          </v-row>
-          <v-list-group
-            v-else-if="item.children"
-            :key="item.text"
-            v-model="item.model"
-            :prepend-icon="item.model ? item.icon : item['icon-alt']"
-            append-icon=""
-          >
-            <template v-slot:activator>
-              <v-list-item-content>
-                <v-list-item-title>
-                  {{ item.text }}
-                </v-list-item-title>
-              </v-list-item-content>
-            </template>
-            <v-list-item
-              v-for="(child, i) in item.children"
-              :key="i"
-              link
-            >
-              <v-list-item-action v-if="child.icon">
-                <v-icon>{{ child.icon }}</v-icon>
-              </v-list-item-action>
-              <v-list-item-content>
-                <v-list-item-title>
-                  {{ child.text }}
-                </v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list-group>
           <v-list-item
-            v-else
             :key="item.text"
             link
             @click="change_data(item.table)"
             :to="item.router===undefined ? '/' : item.router"
-            :color="item.color"
             active-class="active-menu-btn"
           >
             <v-list-item-action style="width:24px">
@@ -83,7 +32,7 @@
     <v-app-bar
       :clipped-left="$vuetify.breakpoint.lgAndUp"
       app
-      color="blue darken-3"
+      color="green darken-3"
       dark
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
@@ -123,13 +72,8 @@
       <v-container fluid fill-height>
         <v-layout child-flex>
           <router-view
-            :key=table.title
-            :table_url=table.url 
-            :headers=table.headers 
-            :filters=table.filters
-            :edit=table.edit 
-            :title=table.title 
-            :actions=table.actions
+            :table=table
+            @ListChanged=change_table
           ></router-view>
         </v-layout>
       </v-container>
@@ -140,7 +84,6 @@
 <script>
 export default {
     props: {
-      dialog: Boolean,
       items: Array
     },
 
@@ -176,8 +119,12 @@ export default {
       change_data: function(data){
         if (data!==undefined)
           this.table_name = data.name
+      },
+      
+      change_table(table){
+        this.table_name = table.name
       }
-        
+
     },
     
     created: function(){
