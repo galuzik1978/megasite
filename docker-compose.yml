@@ -8,7 +8,7 @@ services:
       context: .
       dockerfile: Dockerfile
     entrypoint: /bin/bash
-    command: -c "cd /usr/src/ && gunicorn --bind 0.0.0.0:8000 project_root.wsgi"
+    command: -c "cd /usr/src/ && ls /usr/src/ && gunicorn --bind 0.0.0.0:8000 project_root.wsgi"
     ports:
       - 8092:8000  
     expose:
@@ -18,7 +18,9 @@ services:
     depends_on:
       - db
     volumes:
-      - ./backend/:/usr/src/
+      - "./backend/:/usr/src/"
+      - "./public/:/usr/public/"
+      - "./static/:/usr/static/"
     environment:
       - SQL_USER=${SQL_USER}
       - SQL_PASSWORD=${SQL_PASSWORD}

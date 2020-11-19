@@ -18,7 +18,9 @@ services:
     depends_on:
       - db
     volumes:
-      - "./src/:/usr/src/app/src/"
+      - "./backend/:/usr/src/"
+      - "./public/:/usr/public/"
+      - "./static/:/usr/static/"
     environment:
       - SQL_USER=${SQL_USER}
       - SQL_PASSWORD=${SQL_PASSWORD}
