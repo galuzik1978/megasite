@@ -21,7 +21,7 @@ WORKDIR /usr/src/
 # ADD ./backend /usr/src/
 
 # Switching to a non-root user, please refer to https://aka.ms/vscode-docker-python-user-rights
-RUN useradd appuser && chown -R appuser /usr/src/ chmod -R 755 /usr/src/ && chown -R appuser /home  && chown -R appuser /usr/public
+RUN useradd appuser && chown -R appuser /usr/src/ && chmod -R 755 /usr/src/ && chown -R appuser /home  && chown -R appuser /usr/public
 ENV PATH="/home/appuser/.local/bin:${PATH}"
 USER appuser
 
