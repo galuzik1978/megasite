@@ -2700,7 +2700,7 @@ desk_config = {
                 'table': tables['task'],
                 'icon': 'far fa-handshake',
                 'menu': top_menu,
-                'is_active': True,
+                'is_active': False,
                 'color': 'yellow'
             },
             {
@@ -2773,6 +2773,6 @@ desk_config = {
                 'color': 'red'
             },
         ],
-        'start_page': "inbox"
+        'start_page': "Видео"
     }
 }

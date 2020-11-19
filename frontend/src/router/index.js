@@ -6,6 +6,7 @@ import Login from '../views/Login.vue'
 import List from '../components/List.vue'
 import Video from '../components/Video.vue'
 import Query from '../views/Query.vue'
+import Inspection from '../views/Inspection.vue';
 
 Vue.use(VueRouter)
 
@@ -32,6 +33,11 @@ Vue.use(VueRouter)
         path:'query',
         name: 'Query',
         component: Query
+      },
+      {
+        path:'inspection',
+        name: 'Inspection',
+        component: Inspection
       },
     ]
   },

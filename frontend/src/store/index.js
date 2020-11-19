@@ -130,7 +130,6 @@ export default new Vuex.Store({
           axios.defaults.headers.common = {
             Authorization: 'Token ' + token,
           }
-          console.log("Token: " + token)
           resolve(resp)
         })
         .catch(err => {

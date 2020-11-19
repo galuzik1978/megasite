@@ -45,6 +45,21 @@
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+          <v-list-item
+            :key="110"
+            link
+            @click="change_data('undefined', '/inspection')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-wheel-barrow</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Оформить протокол
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
         </v-list-item-group>
       </v-list>
       <!-- /Главное меню -->
@@ -57,7 +72,7 @@
       dark
     >
       <!-- -->
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+      <!-- <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon> -->
       <v-img
         class="mx-2"
         :src="logo"
