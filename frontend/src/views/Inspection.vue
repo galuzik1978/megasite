@@ -113,7 +113,7 @@
 
                 <!-- Слот для удаления выявленных несоответствий -->
                 <template #item.delete_action="{ item:value }">
-                  <v-icon @click="delete_defect(item, value)">mdi-delete</v-icon>
+                  <v-icon @click="delete_defect(item.files_table, value)">mdi-delete</v-icon>
                 </template>
 
               </v-data-table>
@@ -137,7 +137,58 @@
                   </v-icon>
                 </template>
               </v-select>
+              
+              <!-- Таблица с приложениями к выявленным замечаниям -->
+              <v-data-table
+                :headers="files_table_headers"
+                :items="item.files_table"
+                hide-default-header
+                hide-default-footer
+                v-if="item.files_table.length>0"
+              >
 
+                <template #item.num="{ item:val }">
+                  {{ item.files_table.indexOf(val) + 1 }}
+                </template>
+
+                <template #item.actions="{ item:val }">
+                  <v-icon @click="delete_file(item.files_table, val)">mdi-delete</v-icon>
+                </template>
+
+                <!-- Слот для вставки изображений в таблицу приложений -->
+                <template #item.img="{ item }">
+                  <v-img :src="item.img" width="150px"></v-img>
+                </template>
+
+              </v-data-table>
+              <!-- Приложение файлов в форме -->
+              <v-card-actions>
+                <v-file-input
+                  v-model="files"
+                  placeholder="Загрузите дополнительные файлы"
+                  label="Выберите файл"
+                  multiple
+                  prepend-icon="mdi-paperclip"
+                  @change="file_append(item.files_table)"
+                  accept="image/*, video/*, audio/*"
+                >
+                  <template v-slot:selection="{ text }">
+                    <v-chip
+                      small
+                      label
+                      color="primary"
+                    >
+                      {{ text }}
+                    </v-chip>
+                  </template>
+                </v-file-input>
+                <v-spacer></v-spacer>
+                <v-btn
+                  @click="reserve"
+                >
+                  Сохранить все
+                </v-btn>
+              </v-card-actions>
             </td>
           </template>
         </v-data-table>
@@ -184,7 +235,7 @@
         label="Выберите файл"
         multiple
         prepend-icon="mdi-paperclip"
-        @change="file_append()"
+        @change="file_append(files_table)"
         accept="image/*, video/*, audio/*"
       >
         <template v-slot:selection="{ text }">
@@ -267,42 +318,48 @@ export default {
                 element: 'Аппараты защиты',
                 document: 'ГОСТ Р 53780 п.5.5.1.16; ГОСТ Р 53783 п.В.3.1.4;',
                 result: null,
-                defects:[]
+                defects:[],
+                files_table:[],
               },
               {
                 num: '2',
                 element: 'Электропроводка',
                 document: 'ГОСТ Р 53780 п.5.5.1.1; 5.5.1.2; 5.5.1.4-5.5.1.6; 5.5.1.9-5.5.1.10; ГОСТ Р 53783 п.В.3.1.4;',
                 result: null,
-                defects:[]
+                defects:[],
+                files_table:[],
               },
               {
                 num: '3',
                 element: 'Электрооборудование',
                 document: 'ГОСТ Р 53780 п.5.5.1.1-5.5.1.13;5.5.1.15; ГОСТ Р 53783 п.В.3.1.4;',
                 result: null,
-                defects:[]
+                defects:[],
+                files_table:[],
               },
               {
                 num: '4',
                 element: 'Освещение и электроустановочные устройства',
                 document: 'ГОСТ Р 53780 п. 5.5.6.1-5.5.6.4;5.5.6.6-5.5.6.15;  ГОСТ Р 53783 п.В.3.1.4;',
                 result: null,
-                defects:[]
+                defects:[],
+                files_table:[],
               },
               {
                 num: '5',
                 element: 'Заземление (зануление)',
                 document: 'ГОСТ Р 53780 п.5.5.5.7-5.5.5.8;5.5.1.13-5.5.1.14; ГОСТ Р 53783 п.В.3.1.4;',
                 result: null,
-                defects:[]
+                defects:[],
+                files_table:[],
               },
               {
                 num: '6',
                 element: 'Маркировка элементов электрооборудования',
                 document: 'ГОСТ Р 53780 п.5.5.1.15;5.5.5.2;5.5.5.3;',
                 result: null,
-                defects:[]
+                defects:[],
+                files_table:[],
               },
             ],
             results: ['Не произведен', 'Соответствует', 'Не соответствует', 'Не подлежит контролю'],
@@ -464,7 +521,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '2',
@@ -473,7 +531,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               }, 
               {
                 num: '3',
@@ -482,7 +541,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               }, 
               {
                 num: '4',
@@ -491,7 +551,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '5',
@@ -500,7 +561,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '6',
@@ -509,7 +571,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '7',
@@ -518,7 +581,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '8',
@@ -527,7 +591,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '9',
@@ -536,7 +601,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '10',
@@ -545,7 +611,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '11',
@@ -554,7 +621,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '12',
@@ -563,7 +631,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '13',
@@ -572,7 +641,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '14',
@@ -581,7 +651,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '15',
@@ -590,7 +661,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '16',
@@ -599,7 +671,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '17',
@@ -608,7 +681,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '18',
@@ -617,7 +691,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '19',
@@ -626,7 +701,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
               {
                 num: '20',
@@ -635,7 +711,8 @@ export default {
                 wires: '4',
                 diam: '4',
                 control_voltage: '1000',
-                acceptable_resistance: '1'
+                acceptable_resistance: '1',
+                files_table:[],
               },
             ]
           },
@@ -674,21 +751,25 @@ export default {
                 num:'1',
                 element:' Жила N и PE вводного силового кабеля и магистраль зануления (контур)',
                 quantity:'1',
+                files_table:[],
               },
               {
                 num:'2',
                 element:' Корпус ВУ и контур',
                 quantity:'1',
+                files_table:[],
               },
               {
                 num:'3',
                 element:' Контур от ВУ до НКУ',
                 quantity:'1',
+                files_table:[],
               },
               {
                 num:'4',
                 element:' Каркас панели или шкафа НКУ и контур 1шт.',
                 quantity:'1',
+                files_table:[],
               }
 
             ]
@@ -712,7 +793,7 @@ export default {
       console.log("AddDefect")
     },
 
-    file_append(){            
+    file_append(files_table){            
       let reader = new FileReader()
       let new_file = {
         img: "",
@@ -747,7 +828,7 @@ export default {
       else 
           new_file.img = null
       
-      this.files_table.push(new_file)
+      files_table.push(new_file)
       this.files.pop()
     },
     
