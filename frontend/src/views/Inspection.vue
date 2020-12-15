@@ -74,6 +74,18 @@
           </template>
         </v-data-table>
         <v-btn @click="add_row(form.header)">Добавить строку</v-btn>
+        <v-data-table
+          :headers="form.header"
+          :items="form.dataset"
+          hide-default-footer
+          disable-pagination
+        >
+          <template v-slot:top>
+            <v-card-title>
+              Перечень контролируемых параметров
+            </v-card-title>
+          </template>
+        </v-data-table>
       </v-card-text> 
     </v-card>
     <v-btn @click="add_part">Добавить раздел</v-btn>
