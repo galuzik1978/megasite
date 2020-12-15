@@ -23,10 +23,14 @@ export default{
 
             request.onupgradeneeded = e => {
                 let db = e.target.result
-                db.createObjectStore(STORAGE_NAME, { autoincrement: true, keyPath: 'id'})
+                db.createObjectStore(STORAGE_NAME, { 
+                    autoIncrement: true, 
+                    keyPath: 'id'
+                })
             }
         })
     },
+
     async deleteProtocol(protocol) {
         const db = await this.getDB()
 
@@ -41,6 +45,7 @@ export default{
             store.delete(protocol.id)
         })
     },
+
     async getProtocols(){
         let db = await this.getDB()
 
@@ -62,6 +67,22 @@ export default{
             }
         })
     },
+
+    async getProtocol(id){
+        let db = await this.getDB()
+
+        return new Promise(resolve => {
+            let transaction = db.transaction([STORAGE_NAME], 'readonly')
+            transaction.oncomplete = () => {
+                resolve(protocol)
+            }
+
+            const store = transaction.objectStore(STORAGE_NAME)
+            const protocol = store.get(id)
+
+        })
+    },
+
     async saveProtocol(protocol){
         let db = await this.getDB()
 
@@ -72,7 +93,7 @@ export default{
             }
 
             let store = transaction.objectStore(STORAGE_NAME)
-            store.put(protocol)
+            store.put({"protocol": protocol})
         })
 
     }

@@ -24,7 +24,7 @@ export default new Vuex.Store({
     table_name: localStorage.getItem('table_name'),
     current_table: [],
     users: [],
-    protocols: []
+    protocols: [],
   },
 
   mutations: {
@@ -88,17 +88,6 @@ export default new Vuex.Store({
     
     change_data(state, table_name){
       state.table_name = table_name.name
-    },
-
-    SET_PROTOCOLS(state, protocols){
-      state.protocols = protocols
-    },
-
-    DELETE_PROTOCOLS(state, protocol){
-      let i = state.protocols.indexOf(protocol)
-      if (i >= 0){
-        state.protocols.splice(i, 1);        
-      }
     },
 
   },
@@ -234,19 +223,18 @@ export default new Vuex.Store({
       commit('change_data', {"name": payload.name})
     },
 
-    addProtocol({commit}, {protocol}){
-      commit('ADD_PROTOCOL', protocol)
-      return api.saveProtocol(protocol)
+    async addProtocol({commit}, protocol){
+      commit('item_saved')
+      await api.saveProtocol(protocol)
     },
 
     async getProtocols ({commit}) {
-      let protocols = await api.getProtocols()
-      commit('SET_PROTOCOLS', protocols)
+      let protocols = await api.getProtocols();
+      commit('change_data', {"protocols": protocols})
     },
 
-    deleteProtocol ({commit}, {protocol}) {
-      commit('DELETE_PROTOCOL', protocol)
-      return api.deleteProtocol(protocol)
+    async deleteProtocol ({protocol}) {
+      await api.deleteProtocol(protocol)
     }
 
   },
