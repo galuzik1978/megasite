@@ -6,7 +6,8 @@ import Login from '../views/Login.vue'
 import List from '../components/List.vue'
 import Video from '../components/Video.vue'
 import Query from '../views/Query.vue'
-import Inspection from '../views/Inspection.vue';
+import Inspection from '../views/Inspection.vue'
+import CreateForm from '../views/CreateForm.vue'
 
 Vue.use(VueRouter)
 
@@ -39,6 +40,11 @@ Vue.use(VueRouter)
         name: 'Inspection',
         component: Inspection
       },
+      {
+        path: 'createform',
+        name: 'CreateForm',
+        component: CreateForm
+      }
     ]
   },
   {

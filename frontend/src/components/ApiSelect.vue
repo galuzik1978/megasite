@@ -1,7 +1,6 @@
 <template>
   <div>
     <v-select 
-      v-if="field.type=='select'"
       :prepend-icon=field.icon 
       :placeholder=field.text
       :items=items

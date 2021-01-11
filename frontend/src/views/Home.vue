@@ -60,6 +60,21 @@
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+          <v-list-item
+            :key="120"
+            link
+            @click="change_data('undefined', '/createform')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-creation</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Создать новую форму протокола
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
         </v-list-item-group>
       </v-list>
       <!-- /Главное меню -->
