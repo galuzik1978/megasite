@@ -15,12 +15,13 @@ from api.serializers import InboxSer, OutboxSer, SenderSer, ProfileSer, RoleSer,
     SendStatusSer, TypeWorkSer, ContractSer, StatusSer, TaskStatusSer, EventTypeSer, MainWorkSer, TaskSer, MessageSer, \
     TypeCustomerSer, CityTypeSer, StreetTypeSer, TypeLiftSer, LiftDesignSer, TypeProtocolSer, DeviceSetSer, \
     StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer, \
-    get_organization_by_inn, ManagerSer, OrganisationSer
+    get_organization_by_inn, ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
+    SelectChoicesSer, WorkRequestSer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
-    StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
+    StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
-from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract
+from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest
 from user_profile.models import Profile, Role
 from util.customize import tables
 
@@ -370,3 +371,62 @@ class GetBlankView(APIView):
     @staticmethod
     def get(request, *args, **kwargs):
         return FileResponse("Основные функции.ods")
+
+
+class FormsView(APIView):
+    authentication_classes = [authentication.BasicAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    @staticmethod
+    def get(request, format=None):
+        forms = Form.objects.all()
+        response = []
+        for form in Form.objects.all():
+            form.table=[]
+            for table in form.table_set.all():
+                table.header=[]
+                for header in table.header_set.all():
+                    query = header.selectchoices_set.all()
+                    if len(query):
+                        header.selectchoices=[]
+                        for selectchoice in query:
+                            header.selectchoices.append(SelectChoicesSer(selectchoice).data)
+                    table.header.append(HeaderSer(header).data)
+                table.row = []
+                for row in table.row_set.all():
+                    row.sell = []
+                    for sell in row.sell_set.all():
+                        row.sell.append(SellSer(sell).data)
+                    table.row.append(RowSer(row).data)
+                form.table.append(TablesSer(table).data)
+            response.append({'form': FormsSer(form).data})
+        return Response(response)
+
+    @staticmethod
+    def post(request, format=None):
+        return Response({'desktop': customize.desk_config, 'tables': customize.tables})
+
+
+class NewWorkRequestView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    @staticmethod
+    def post(request, *args, **kwargs):
+        contract = Contract.objects.get(pk=kwargs['contract'])
+        work_request = WorkRequest(contract=contract)
+        work_request.save()
+        serializer = WorkRequestSer(work_request)
+        response_status = status.HTTP_200_OK
+        return Response(serializer.data, status=response_status)
+
+    def get(request, *args, **kwargs):
+        contract = Contract.objects.get(pk=kwargs['contract'])
+        try:
+            work_request = contract.workrequest_set.get()
+        except WorkRequest.DoesNotExist as err:
+            work_request = WorkRequest(contract=contract)
+            work_request.save()
+        serializer = WorkRequestSer(work_request)
+        response_status = status.HTTP_200_OK
+        return Response(serializer.data, status=response_status)

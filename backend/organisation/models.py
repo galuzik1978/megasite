@@ -29,6 +29,7 @@ class Element(models.Model):
     def __str__(self):
         return self.name
 
+
 class Group(models.Model):
     name = models.CharField("Вид контроля", max_length=255)
 
@@ -160,6 +161,10 @@ class Object(models.Model):
         return "{} {} {}".format(self.city,self.street, self.building)
 
 
+class Form(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Наименование формы")
+
+
 class Protocol(models.Model):
     type_protocol = models.ForeignKey(TypeProtocol, on_delete=models.PROTECT, verbose_name="Тип протокола")
     num = models.IntegerField(verbose_name="Номер протокола")
@@ -193,6 +198,7 @@ class Protocol(models.Model):
     manual = models.SmallIntegerField(verbose_name="Ручной режим", blank=True, null=True)
     safety_device = models.SmallIntegerField(verbose_name="Безопасность устройства", blank=True, null=True)
     ropes_brake = models.SmallIntegerField(verbose_name="Канаты исправны", blank=True, null=True)
+    form = models.ForeignKey(Form, on_delete=models.PROTECT, blank=True, null=True)
 
     def __str__(self):
         return "{} от {} {}".format(self.num, self.date_act, self.object_exam)
@@ -219,8 +225,12 @@ class Device(models.Model):
         return "{} от {} {}".format(self.num, self.date_act, self.object_exam)
 
 
+class Document(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Документ")
+
+
 class Reason(models.Model):
-    document = models.CharField(max_length=255, verbose_name="Документ")
+    document = models.ForeignKey(Document, on_delete=models.PROTECT)
     point = models.CharField(max_length=25,verbose_name="Номер пункта")
     phrasing = models.TextField()
 
@@ -241,58 +251,54 @@ class DefectList(models.Model):
             self.point)
 
 
-class ProtocolCheck(models.Model):
-    form_type = models.ForeignKey(FormType, on_delete=models.PROTECT)
-    element = models.ForeignKey(Element, on_delete=models.PROTECT)
-    group = models.ForeignKey(Group, on_delete=models.PROTECT)
-    reason = models.ManyToManyField(Reason, related_name="reasons")
-    defect_list = models.ManyToManyField(DefectList, related_name="defects")
-
-    def __str__(self):
-        return "{} {} {}".format(
-            self.form_type__name,
-            self.group__name,
-            self.element__name)
+class Table(models.Model):
+    form = models.ManyToManyField(Form)
+    name = models.CharField(max_length=255, verbose_name="Наименование таблицы")
 
 
-class CheckChoice(models.Model):
-    Choices = [
-        ("1", "Не менее"),
-        ("2", "Не более"),
-        ("3", "В интервале"),
-        ("4", "Соответствие")
+class Header(models.Model):
+    ALIGN_CHOICES = [
+        (0, 'none'),
+        (1, 'start'),
+        (2, 'center'),
+        (3, 'end'),
     ]
-    protocol_check = models.ForeignKey(ProtocolCheck, on_delete=models.PROTECT, related_name="protocol_checks")
-    phrasing = models.TextField()
-    max_value = models.FloatField(verbose_name="Максимум", blank=True, null=True)
-    min_value = models.FloatField(verbose_name="Минимум", blank=True, null=True)
-    verife = models.CharField(max_length=25, choices=Choices)
-    name = models.ForeignKey(ChoiceName, on_delete=models.PROTECT)
-    order = models.SmallIntegerField(verbose_name="Порядковый номер")
+    FIELD_TYPES = [
+        (0, 'none'),
+        (1, 'bool'),
+        (2, 'rows_num'),
+        (3, 'select'),
+        (4, 'actions')
+    ]
+    table = models.ForeignKey(Table, on_delete=models.PROTECT)
+    text = models.CharField(max_length=255, verbose_name="Наименование столбца", blank=True, null=True)
+    align = models.SmallIntegerField(choices=ALIGN_CHOICES, blank=True, null=True)
+    type = models.SmallIntegerField(choices=FIELD_TYPES, blank=True, null=True)
+    sortable = models.BooleanField(blank=True, null=True)
+    value = models.CharField(max_length=255, verbose_name="Наименование данных столбца", blank=True, null=True)
+    width = models.CharField(max_length=5, verbose_name="Относительная ширина столбца", blank=True, null=True)
+    editable = models.BooleanField(blank=True, null=True)
 
-    def __str__(self):
-        return "CheckChoice: {} {} {}".format(
-            self.protocol_check__form_type__name,
-            self.protocol_check__group__name,
-            self.protocol_check__element__name)
+
+class Row(models.Model):
+    table = models.ForeignKey(Table, on_delete=models.PROTECT)
+    name = models.CharField(max_length=255, verbose_name="Наименование строки")
 
 
-class Result(models.Model):
+class Sell(models.Model):
+    row = models.ForeignKey(Row, on_delete=models.PROTECT)
+    text = models.CharField(max_length=255, verbose_name="Неизменное содержимое ячейки", blank=True, null=True)
+    name = models.CharField(max_length=255)
+
+
+class SelectChoices(models.Model):
+    header = models.ForeignKey(Header, on_delete=models.PROTECT)
+    text = models.CharField(max_length=25)
+    value = models.CharField(max_length=25)
+
+
+class SellValue(models.Model):
+    sell = models.ForeignKey(Sell, on_delete=models.PROTECT)
     protocol = models.ForeignKey(Protocol, on_delete=models.PROTECT)
-    check_choice = models.ForeignKey(CheckChoice, on_delete=models.PROTECT)
-    value = models.CharField(max_length=25, verbose_name="Значение", blank=True, null=True)
-    comment = models.TextField(verbose_name="Комментарий", blank=True, null=True)
-    done = models.BooleanField(verbose_name="Проверка произведена", default=False)
-    passed = models.BooleanField(verbose_name="Проверка успешна", blank=True, null=True)
-    defects = models.ManyToManyField(DefectList)
+    value = models.CharField(max_length=255, verbose_name="Содержимое ячейки")
 
-    def __str__(self):
-        return "Result: {} {} {}".format(
-            self.check_choice__protocol_check__form_type__name,
-            self.check_choice__protocol_check__group__name,
-            self.check_choice__protocol_check__element__name)
-
-
-class ResultAnnex(models.Model):
-    result = models.ForeignKey(Result, on_delete=models.PROTECT)
-    file = models.FileField(upload_to="ResultAnnex")

@@ -49,5 +49,8 @@ urlpatterns = [
     path('api/innrequest/', views.InnRequestView.as_view()),
     path('template/', views.TemplateView.as_view(), name='template'),
     path('contract/create_by_inbox/<int:inbox>/', views.CreateContractByInboxView.as_view(), name="ContractByInbox"),
-    path('get_blank/', views.GetBlankView.as_view())
+    path('get_blank/', views.GetBlankView.as_view()),
+    path('forms/', views.FormsView.as_view(), name='template'),
+    path('work/request/<int:contract>/', views.NewWorkRequestView.as_view(), name='newWorkRequest'),
+    path('api/workrequest/<int:contract>/', views.NewWorkRequestView.as_view(), name='newWorkRequest'),
 ]

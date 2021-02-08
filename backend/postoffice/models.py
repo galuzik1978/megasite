@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from organisation.models import Organisation, Object
+from organisation.models import Organisation, Object, Form, TypeLift, StreetType, CityType, LiftDesign
 
 
 class TypeLetter(models.Model):
@@ -92,6 +92,9 @@ class Contract(models.Model):
     external_num = models.CharField(max_length=25, verbose_name="Внешний номер договора")
     inbox = models.ForeignKey(Inbox, on_delete=models.PROTECT, verbose_name="Основание заключения договора")
     customer = models.ForeignKey(Organisation, on_delete=models.PROTECT, verbose_name="Заказчик")
-    object = models.ForeignKey(Object, on_delete=models.PROTECT, verbose_name="Объект контроля", null=True,
-        blank=True,)
     status = models.ForeignKey(ContractStatus, on_delete=models.PROTECT, verbose_name="Статус договора")
+
+
+class WorkRequest(models.Model):
+    contract = models.ForeignKey(Contract, on_delete=models.PROTECT, unique=True)
+    form = models.ForeignKey(Form, on_delete=models.PROTECT, null=True)

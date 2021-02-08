@@ -1104,6 +1104,18 @@ tables = {
         'url': 'api/contract/',
         'ident': ['name'],
         'title': 'Договоры',
+        'actions': {
+            'WorkRequest': {
+                'text': "Оформить заявку",
+                'color': 'green',
+                'icon': 'mdi-account-multiple-plus',
+                'url': 'work/request/',
+            },
+            'Cancel': {
+                'text': "Закрыть",
+                'icon': 'mdi-close-circle-outline',
+            },
+        },
         'headers': [
             {
                 'text': 'Номер',

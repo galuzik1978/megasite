@@ -30,10 +30,25 @@
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
-           <v-list-item
+          <v-list-item
+            :key="90"
+            link
+            @click="change_data('undefined', '/contracts')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-file-question-outline</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Договоры
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item
             :key="100"
             link
-            @click="change_data('undefined', '/query')"
+            @click="change_data('undefined', '/query/0')"
             active-class="active-menu-btn"
           >
             <v-list-item-action style="width:24px">
@@ -72,6 +87,21 @@
             <v-list-item-content class="text-left">
               <v-list-item-title>
                 Создать новую форму протокола
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item
+            :key="130"
+            link
+            @click="change_data('undefined', '/protocol')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-creation</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Заполнить протокол
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>

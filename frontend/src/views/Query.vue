@@ -264,8 +264,7 @@
     account:"",
     korr_account:"",
     inn_error:"",
-    inn_success:""
-
+    inn_success:"",
   }),
 
   computed:{
@@ -276,8 +275,30 @@
 
     years(){
       return [...Array.from(Array(120).keys(),x=>this.year-x)]
+    },
+
+    url(){
+      return "api/workrequest/" + this.id
     }
 
+  },
+
+  props:{
+    id: Number
+  },
+
+  watch: {
+    id: {
+      immediate: true,
+      handler(){
+        this.$http
+        .get(this.url)
+        .then((response) => {
+          this.items = response.data
+          console.log(this.items)
+        })
+      }
+    }
   },
 
   methods:{

@@ -8,6 +8,8 @@ import Video from '../components/Video.vue'
 import Query from '../views/Query.vue'
 import Inspection from '../views/Inspection.vue'
 import CreateForm from '../views/CreateForm.vue'
+import Protocol from '../views/Protocol.vue'
+import Contracts from '../views/Contracts.vue'
 
 Vue.use(VueRouter)
 
@@ -31,9 +33,10 @@ Vue.use(VueRouter)
         component: Video
       },
       {
-        path:'query',
+        path:'query/:id',
         name: 'Query',
-        component: Query
+        component: Query,
+        props: true
       },
       {
         path:'inspection',
@@ -44,6 +47,16 @@ Vue.use(VueRouter)
         path: 'createform',
         name: 'CreateForm',
         component: CreateForm
+      },
+      {
+        path: 'protocol',
+        name: 'Protocol',
+        component: Protocol
+      },
+      {
+        path: 'contracts',
+        name: 'contracts',
+        component: Contracts,
       }
     ]
   },

@@ -1,4 +1,5 @@
 import json
+from abc import ABC
 
 import requests
 from django.contrib.auth.models import User
@@ -10,7 +11,8 @@ from rest_framework.fields import empty
 from rest_framework.response import Response
 
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
-    TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
+    TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Table, \
+    Form
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus
 from user_profile.models import Profile, Role
@@ -547,7 +549,7 @@ class ContractSer(serializers.ModelSerializer):
         init_status = "Новый договор"
         try:
             status = ContractStatus.objects.get(name=init_status)
-        except TypeLetter.DoesNotExist as err:
+        except ContractStatus.DoesNotExist as err:
             status = ContractStatus.objects.create(name=init_status)
         contract = Contract.objects.create(
             num=num,
@@ -566,3 +568,49 @@ class ContractSer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         res = super(ContractSer, self).to_internal_value(data)
         return res
+
+class SelectChoicesSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    value = serializers.CharField()
+
+
+class SellSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class RowSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    sell = SellSer(many=True)
+
+
+class HeaderSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    type = serializers.CharField()
+    align = serializers.CharField()
+    sortable = serializers.BooleanField()
+    editable = serializers.BooleanField()
+    value = serializers.CharField()
+    selectchoices = SelectChoicesSer(many=True, required=False)
+
+
+class TablesSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    header = HeaderSer(many=True)
+    row = RowSer(many=True)
+
+
+class FormsSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    table = TablesSer(many=True)
+
+
+class WorkRequestSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    form = FormsSer()
+    contract = ContractSer()
