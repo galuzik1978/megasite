@@ -126,6 +126,8 @@ class Organisation(models.Model):
     add_phone = models.BigIntegerField(blank=True, null=True, help_text='Доп. телефон')
     fax = models.BigIntegerField(blank=True, null=True, help_text="Факс")
     filial_count = models.SmallIntegerField(help_text="Кол-во филииалов", blank=True, null=True)
+    legal_address = models.CharField(max_length=500, help_text="Юридический адрес", blank=True, null=True)
+    post_address = models.CharField(max_length=500, help_text="Почтовый адрес", blank=True, null=True)
 
     def __str__(self):
         return self.full_name
@@ -145,7 +147,7 @@ class Object(models.Model):
     reg_num = models.CharField("Регистрационный номер", max_length=25, blank=True, null=True)
     mf_year = models.DateField("Год выпуска", blank=True, null=True)
     type_lift = models.ForeignKey(TypeLift, on_delete=models.PROTECT, blank=True, null=True, verbose_name="Тип лифта")
-    capacity = models.SmallIntegerField("Грузоподъемность", blank=True, null=True)
+    capacity = models.DecimalField("Грузоподъемность", blank=True, null=True, max_digits=7, decimal_places=2)
     floors = models.SmallIntegerField("Кол-во этажей", blank=True, null=True)
     speed = models.DecimalField("Скорость лифта", blank=True, null=True, max_digits=6, decimal_places=3)
     maker = models.CharField("Производитель", max_length=100, blank=True, null=True)
@@ -167,7 +169,7 @@ class Form(models.Model):
 
 class Protocol(models.Model):
     type_protocol = models.ForeignKey(TypeProtocol, on_delete=models.PROTECT, verbose_name="Тип протокола")
-    num = models.IntegerField(verbose_name="Номер протокола")
+    num = models.CharField(max_length=25, verbose_name="Номер протокола")
     date_act = models.DateField(verbose_name="Год регистрации", auto_now=True)
     date_protocol = models.DateField(verbose_name="Год регистрации", auto_now=True)
     object_exam = models.ForeignKey(Object, on_delete=models.CASCADE, verbose_name="Объект")
@@ -187,17 +189,6 @@ class Protocol(models.Model):
         verbose_name="Контактное лицо собственника",
         related_name="owner_person"
     )
-    # заглушки под шаблоны протоколов
-    electric_template = models.SmallIntegerField(verbose_name="шаблон протокола", blank=True, null=True)
-    enabled_measure = models.SmallIntegerField(verbose_name="шаблон измерений", blank=True, null=True)
-    electric_measure = models.SmallIntegerField(verbose_name="шаблон электрических измерений", blank=True, null=True)
-    num_control_not_use = models.SmallIntegerField(verbose_name="Не проведенные замеры", blank=True, null=True)
-    unit_protection_valid = models.SmallIntegerField(verbose_name="Защита исправна", blank=True, null=True)
-    safe_exploitation = models.SmallIntegerField(verbose_name="Эксплуатация безопасна", blank=True, null=True)
-    visual_inspection = models.SmallIntegerField(verbose_name="Внешний осмотр", blank=True, null=True)
-    manual = models.SmallIntegerField(verbose_name="Ручной режим", blank=True, null=True)
-    safety_device = models.SmallIntegerField(verbose_name="Безопасность устройства", blank=True, null=True)
-    ropes_brake = models.SmallIntegerField(verbose_name="Канаты исправны", blank=True, null=True)
     form = models.ForeignKey(Form, on_delete=models.PROTECT, blank=True, null=True)
 
     def __str__(self):
@@ -241,8 +232,7 @@ class Reason(models.Model):
 
 
 class DefectList(models.Model):
-    document = models.CharField(max_length=255, verbose_name="Документ")
-    point = models.CharField(max_length=25,verbose_name="Номер пункта")
+    reason = models.ForeignKey(Reason, on_delete=models.PROTECT, verbose_name="Документ", null=True)
     phrasing = models.TextField()
 
     def __str__(self):
@@ -288,7 +278,7 @@ class Row(models.Model):
 class Sell(models.Model):
     row = models.ForeignKey(Row, on_delete=models.PROTECT)
     text = models.CharField(max_length=255, verbose_name="Неизменное содержимое ячейки", blank=True, null=True)
-    name = models.CharField(max_length=255)
+    value = models.CharField(max_length=255)
 
 
 class SelectChoices(models.Model):
@@ -302,3 +292,31 @@ class SellValue(models.Model):
     protocol = models.ForeignKey(Protocol, on_delete=models.PROTECT)
     value = models.CharField(max_length=255, verbose_name="Содержимое ячейки")
 
+
+# Список возможных дефектов для каждой строки протокола
+class RowDefects(models.Model):
+    row = models.ForeignKey(Row, on_delete=models.PROTECT)
+    defect = models.ForeignKey(DefectList, on_delete=models.PROTECT)
+
+
+# Список обнаруженных дефектов
+class ObservedDefect(models.Model):
+    sell_value = models.ForeignKey(SellValue, on_delete=models.PROTECT)
+    defect = models.ForeignKey(DefectList, on_delete=models.PROTECT)
+
+
+class Rules(models.Model):
+    sell = models.ForeignKey(Sell, on_delete=models.ForeignKey)
+    rule = models.TextField(verbose_name="Определение правила на JS")
+
+
+class ProtocolAnnex(models.Model):
+    ANNEX_TYPES = [
+        (0, 'row'),
+        (1, 'table'),
+        (2, 'protocol'),
+    ]
+    sell_value = models.ForeignKey(SellValue, on_delete=models.PROTECT, null=True)
+    type = models.SmallIntegerField(choices=ANNEX_TYPES)
+    name = models.CharField(max_length=50, verbose_name="Имя файла")
+    file = models.FileField(upload_to="ProtocolAnnex")

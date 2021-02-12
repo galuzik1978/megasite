@@ -14,9 +14,11 @@
             <v-select
               v-model="type_work_select"
               :items="type_work_items"
+              item-text="name"
               :rules="[v => !!v || 'Выберите форму оценки']"
               label="Форма оценки"
               required
+              return-object
             ></v-select>
             <table class="grid_table">
               <thead>
@@ -34,20 +36,20 @@
               <tbody>
                 <tr v-for="(row, i) in table_rows" :key="'row_table' + i">
                   <td>{{ i+1 }}</td>
-                  <td><v-text-field v-model="row.address"></v-text-field></td>
-                  <td><v-text-field v-model="row.reg"></v-text-field></td>
+                  <td><v-textarea v-model="row.address"></v-textarea></td>
+                  <td><v-text-field v-model="row.reg_num"></v-text-field></td>
                   <td>
                     <v-select
-                      v-model="row.year_of_commission"
+                      v-model="row.mf_year"
                       :items="years"
                       :rules="[v => !!v || 'Выберите год ввода объекта в эксплуатацию']"
                       required
                     >
                     </v-select>
                   </td>
-                  <td><v-text-field v-model="row.type"></v-text-field></td>
-                  <td><v-text-field v-model="row.tonnage"></v-text-field></td>
-                  <td><v-text-field v-model="row.floor_stops"></v-text-field></td>
+                  <td><v-text-field v-model="row.type_lift.name"></v-text-field></td>
+                  <td><v-text-field v-model="row.capacity"></v-text-field></td>
+                  <td><v-text-field v-model="row.floors"></v-text-field></td>
                   <td>
                     <v-col>
                       <v-menu
@@ -59,7 +61,7 @@
                       >
                         <template v-slot:activator="{ on, attrs }">
                           <v-text-field
-                            v-model="row.last_verife"
+                            v-model="row.date_exam"
                             prepend-icon="mdi-calendar"
                             readonly
                             v-bind="attrs"
@@ -67,7 +69,7 @@
                           ></v-text-field>
                         </template>
                         <v-date-picker
-                          v-model="row.last_verife"
+                          v-model="row.date_exam"
                           @input="row.dpicker = false"
                           locale="ru"
                           type="month"
@@ -208,7 +210,7 @@
               @click="save_blank"
               width="100%"
               elevation="6"
-            >Скачать бланк заявки</v-btn>
+            >Сохранить бланк заявки</v-btn>
           </v-form>
         </v-card-text>
       </v-card>
@@ -239,8 +241,8 @@
         reg: "",
         year_of_commission: null,
         type:"",
-        tonnage:"",
-        floor_stops:"",
+        capacity:"",
+        floors:"",
         last_verife:"",
         dpicker: false
       }
@@ -274,11 +276,11 @@
     },
 
     years(){
-      return [...Array.from(Array(120).keys(),x=>this.year-x)]
+      return [...Array.from(Array(120).keys(),x=>String(this.year-x))]
     },
 
     url(){
-      return "api/workrequest/" + this.id
+      return "api/workrequest/" + this.id + "/"
     }
 
   },
@@ -294,8 +296,25 @@
         this.$http
         .get(this.url)
         .then((response) => {
-          this.items = response.data
+          let data = response.data
           console.log(this.items)
+          this.full_name = data.contract.customer.full_name
+          this.inn = data.contract.customer.inn
+          this.head = data.contract.customer.head
+          this.head_name = data.contract.customer.head_name
+          this.head_surname = data.contract.customer.head_surname
+          this.head_last_name = data.contract.customer.head_last_name
+          this.ogrn = data.contract.customer.ogrn
+          this.kpp = data.contract.customer.kpp
+          this.type_customer = data.contract.customer.type_customer.name
+          this.address = data.contract.customer.legal_address
+          this.post_address = data.contract.customer.post_address
+          this.bik = data.contract.customer.bic
+          this.bank = data.contract.customer.bank
+          this.account = data.contract.customer.account
+          this.korr_account = data.contract.customer.cor_account,
+          this.type_work_items = data.all_forms
+          this.table_rows = data.objects
         })
       }
     }
@@ -316,8 +335,8 @@
     },
 
     add_row(){
-      let tmp = this.deepClone(this.row_shape)
-      this.table_rows.push(tmp)
+      //let tmp = this.deepClone(this.row_shape)
+      this.table_rows.push({})
     },
 
     del_row(){
@@ -328,6 +347,7 @@
       let v = this
       this.$http.get('api/innrequest/', {params:{inn:event}})
       .then((resp) => {
+        v.id = this.id
         v.full_name = resp.data.full_name
         v.head = resp.data.head
         v.head_last_name = resp.data.head_last_name
@@ -369,8 +389,9 @@
       formData.append('account',this.account)
       formData.append('korr_account',this.korr_account)
       formData.append('table_rows', JSON.stringify(this.table_rows))
+      formData.append('form', JSON.stringify(this.type_work_select))
       
-      this.$http.post("get_blank/", formData)
+      this.$http.post(this.url, formData)
       .then((response) => {
         this.items = response.data
         fileDownload(response.data, "Основные функции.ods");

@@ -96,5 +96,6 @@ class Contract(models.Model):
 
 
 class WorkRequest(models.Model):
-    contract = models.ForeignKey(Contract, on_delete=models.PROTECT, unique=True)
+    contract = models.ForeignKey(Contract, on_delete=models.PROTECT)
     form = models.ForeignKey(Form, on_delete=models.PROTECT, null=True)
+    object = models.ManyToManyField(Object)

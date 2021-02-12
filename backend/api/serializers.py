@@ -1,18 +1,14 @@
 import json
-from abc import ABC
 
 import requests
 from django.contrib.auth.models import User
 from django.db.models import Max
 from django.utils.datetime_safe import datetime
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import serializers, status
-from rest_framework.fields import empty
 from rest_framework.response import Response
 
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
-    TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Table, \
-    Form
+    TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus
 from user_profile.models import Profile, Role
@@ -29,9 +25,38 @@ class TypeCustomerSer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+def hint_address(address_string, request):
+    url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/address"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": "Token {}".format(token)
+    }
+    data = {"query": address_string}
+    r = requests.post(url, headers=headers, json=data)
+    try:
+        res = r.json()['suggestions'][0]
+        response_status = status.HTTP_200_OK
+        data['postcode'] = res['data']['postal_code']
+        data['country'] = res['data']['country']
+        data['region'] = res['data']['region_with_type']
+        data['city_type'] = res['data']['city_type_full']
+        data['city'] = res['data']['city']
+        data['street_type'] = res['data']['street_type_full']
+        data['street'] = res['data']['street']
+        data['building'] = res['data']['house']
+        data['address'] = res['unrestricted_value']
+
+    except IndexError:
+        data['error'] = "Проверьте адрес. Адрес не найден в базе"
+        response_status = status.HTTP_404_NOT_FOUND
+
+    return Response(data, status=response_status)
+
+
 def get_organization_by_inn(inn, request):
     url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
-    headers={
+    headers = {
         "Content-Type": "application/json",
         "Accept": "application/json",
         "Authorization": "Token {}".format(token)
@@ -42,7 +67,7 @@ def get_organization_by_inn(inn, request):
         res = r.json()['suggestions'][0]['data']
         try:
             type_customer = TypeOrganisation.objects.get(name=res['opf']['full'])
-        except TypeOrganisation.DoesNotExist as e:
+        except TypeOrganisation.DoesNotExist:
             type_customer = TypeOrganisation.objects.create(name=res['opf']['full'])
 
         if res['type'] == 'LEGAL':
@@ -78,7 +103,7 @@ def get_organization_by_inn(inn, request):
             raise Exception("Не известная форма собственности: {}".format(res['type']))
         response_status = status.HTTP_200_OK
         data['len'] = len(r.json()['suggestions'])
-    except IndexError as e:
+    except IndexError:
         data = "Проверьте ИНН. ИНН не найден в базе"
         response_status = status.HTTP_404_NOT_FOUND
 
@@ -218,7 +243,7 @@ class CustomerSer(serializers.ModelSerializer):
         fields = [
             'id', 'inn', 'inn_filial', 'full_name', 'type_customer', 'head',
             'head_name', 'head_surname', 'head_last_name', 'kpp', 'ogrn',
-            'phone', 'add_phone', 'fax'
+            'phone', 'add_phone', 'fax', 'bic', 'bank', 'account', 'cor_account', 'legal_address', 'post_address'
         ]
 
     def __init__(self, *args, **kwargs):
@@ -433,10 +458,41 @@ class ObjectSer(serializers.ModelSerializer):
     city_type = CityTypeSer()
     street_type = StreetTypeSer()
     lift_design = LiftDesignSer()
+    mf_year = serializers.DateField(format="%Y")
+    date_exam = serializers.DateField(format="%Y-%m")
+    type_lift = TypeLiftSer()
+    address = serializers.SerializerMethodField('get_address')
 
     class Meta:
         model = Object
-        fields = '__all__'
+        fields = (
+            'id',
+            'postcode',
+            'region',
+            'city_type',
+            'city',
+            'street_type',
+            'street',
+            'building',
+            'reg_num',
+            'mf_year',
+            'type_lift',
+            'capacity',
+            'floors',
+            'date_exam',
+            'address',
+            'lift_design'
+        )
+
+    def get_address(self, work_object):
+        str = "{}. {}, {}. {}, д. {}".format(
+            work_object.city_type.name[0],
+            work_object.city,
+            work_object.street_type.name[0:2],
+            work_object.street,
+            work_object.building
+        )
+        return str
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -522,7 +578,7 @@ class ContractSer(serializers.ModelSerializer):
     customer = CustomerSer()
     inbox = InboxSer()
     type_work = TypeWorkSer()
-    object = ObjectSer()
+    # object = ObjectSer()
 
     class Meta:
         model = Contract
@@ -535,10 +591,10 @@ class ContractSer(serializers.ModelSerializer):
     def create(self, validated_data):
         inbox = Inbox.objects.get(pk=json.loads(self.initial_data['inbox'])['id'])
         customer = inbox.customer
-        unit = Object.objects.get(pk=json.loads(self.initial_data['object'])['id'])
-        unit.customer = customer
+        # unit = Object.objects.get(pk=json.loads(self.initial_data['object'])['id'])
+        # unit.customer = customer
         type_work = TypeWork.objects.get(pk=json.loads(self.initial_data['type_work'])['id'])
-        unit.save()
+        # unit.save()
         date = datetime.strptime(self.initial_data['date'],"%Y-%m-%d")
         end_date = datetime.strptime(self.initial_data['end_date'],"%Y-%m-%d")
         try:
@@ -560,7 +616,7 @@ class ContractSer(serializers.ModelSerializer):
             external_num=self.initial_data['external_num'],
             inbox=inbox,
             customer=customer,
-            object=unit,
+            # object=unit,
             status=status
         )
         return contract
@@ -577,7 +633,8 @@ class SelectChoicesSer(serializers.Serializer):
 
 class SellSer(serializers.Serializer):
     id = serializers.IntegerField()
-    name = serializers.CharField()
+    text = serializers.CharField()
+    value = serializers.CharField()
 
 
 class RowSer(serializers.Serializer):
@@ -607,10 +664,88 @@ class TablesSer(serializers.Serializer):
 class FormsSer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
-    table = TablesSer(many=True)
+    table = TablesSer(many=True, required=False)
+
+
+class AllFormsSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class SingleWorkRequestSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    object = ObjectSer()
 
 
 class WorkRequestSer(serializers.Serializer):
     id = serializers.IntegerField()
     form = FormsSer()
     contract = ContractSer()
+    all_forms = AllFormsSer(many=True)
+    objects = ObjectSer(many=True)
+
+
+class ProtocolSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    type_protocol = TypeProtocolSer()
+    num = serializers.CharField()
+    date_act = serializers.DateField()
+    date_protocol = serializers.DateField()
+    object_exam = ObjectSer()
+    customer = OrganisationSer()
+    owner = OrganisationSer()
+    worker = UserAuthSer()
+    device_set = DeviceSetSer()
+    customer_person = UserAuthSer()
+    owner_person = UserAuthSer()
+    form = FormsSer()
+
+
+class SellValueSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    protocol = ProtocolSer()
+    value = serializers.CharField()
+
+
+class DocumentSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class ReasonSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    document = DocumentSer()
+    point = serializers.CharField()
+    phrasing = serializers.CharField()
+
+
+class DefectSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    reason = ReasonSer()
+    phrasing = serializers.CharField()
+
+
+class RowDefectsSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    row = RowSer()
+    defect = DefectSer()
+
+
+class ObservedDefectSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    sell_value = SellValueSer()
+    defect = DefectSer()
+
+
+class ProtocolAnnexSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    sell_value = SellValueSer()
+    type = serializers.CharField()
+    name = serializers.CharField()
+    file = serializers.FileField()
+
+
+class RulesSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    sell = SellSer()
+    rule = serializers.CharField()
