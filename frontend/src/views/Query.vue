@@ -244,7 +244,10 @@
         capacity:"",
         floors:"",
         last_verife:"",
-        dpicker: false
+        dpicker: false,
+        type_lift:{
+          name:""
+        }
       }
     ],
 
@@ -315,6 +318,7 @@
           this.korr_account = data.contract.customer.cor_account,
           this.type_work_items = data.all_forms
           this.table_rows = data.objects
+          this.type_work_select = data.form
         })
       }
     }
@@ -335,8 +339,8 @@
     },
 
     add_row(){
-      //let tmp = this.deepClone(this.row_shape)
-      this.table_rows.push({})
+      let tmp = this.deepClone(this.row_shape[0])
+      this.table_rows.push(tmp)
     },
 
     del_row(){
@@ -347,7 +351,7 @@
       let v = this
       this.$http.get('api/innrequest/', {params:{inn:event}})
       .then((resp) => {
-        v.id = this.id
+        v.id = Number(this.id)
         v.full_name = resp.data.full_name
         v.head = resp.data.head
         v.head_last_name = resp.data.head_last_name
@@ -400,10 +404,6 @@
     }
 
   },
-
-  mounted(){
-    this.add_row()
-  }
 
  }
  </script>

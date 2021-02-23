@@ -52,4 +52,6 @@ urlpatterns = [
     path('get_blank/', views.GetBlankView.as_view()),
     path('forms/', views.FormsView.as_view(), name='template'),
     path('api/workrequest/<int:contract>/', views.WorkRequestView.as_view(), name='newWorkRequest'),
+    path('api/workrequest/', views.WorkRequestListView.as_view(), name='WorkRequestList'),
+
 ]

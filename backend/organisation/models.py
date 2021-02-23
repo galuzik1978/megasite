@@ -168,26 +168,27 @@ class Form(models.Model):
 
 
 class Protocol(models.Model):
-    type_protocol = models.ForeignKey(TypeProtocol, on_delete=models.PROTECT, verbose_name="Тип протокола")
-    num = models.CharField(max_length=25, verbose_name="Номер протокола")
+    type_protocol = models.ForeignKey(TypeProtocol, on_delete=models.PROTECT, verbose_name="Тип протокола", null=True)
+    num = models.CharField(max_length=25, verbose_name="Номер протокола", null=True)
     date_act = models.DateField(verbose_name="Год регистрации", auto_now=True)
     date_protocol = models.DateField(verbose_name="Год регистрации", auto_now=True)
-    object_exam = models.ForeignKey(Object, on_delete=models.CASCADE, verbose_name="Объект")
-    customer = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="customer", verbose_name="Заказчик")
-    owner = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="owner", verbose_name="Собственник")
-    worker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="Исполнитель", related_name="user")
-    device_set = models.ForeignKey(DeviceSet, on_delete=models.PROTECT, verbose_name="Набор инструментов")
+    customer = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="customer", verbose_name="Заказчик", null=True)
+    owner = models.ForeignKey(Organisation, on_delete=models.PROTECT, related_name="owner", verbose_name="Собственник", null=True)
+    worker = models.ForeignKey(User, on_delete=models.PROTECT, verbose_name="Исполнитель", related_name="user", null=True)
+    device_set = models.ForeignKey(DeviceSet, on_delete=models.PROTECT, verbose_name="Набор инструментов", null=True)
     customer_person = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         verbose_name="Контактное лицо заказчика",
-        related_name="customer_person"
+        related_name="customer_person",
+        null = True
     )
     owner_person = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
         verbose_name="Контактное лицо собственника",
-        related_name="owner_person"
+        related_name="owner_person",
+        null=True
     )
     form = models.ForeignKey(Form, on_delete=models.PROTECT, blank=True, null=True)
 
@@ -278,7 +279,7 @@ class Row(models.Model):
 class Sell(models.Model):
     row = models.ForeignKey(Row, on_delete=models.PROTECT)
     text = models.CharField(max_length=255, verbose_name="Неизменное содержимое ячейки", blank=True, null=True)
-    value = models.CharField(max_length=255)
+    value = models.CharField(max_length=255, null=True)
 
 
 class SelectChoices(models.Model):

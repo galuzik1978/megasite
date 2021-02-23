@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-from organisation.models import Organisation, Object, Form, TypeLift, StreetType, CityType, LiftDesign
+from organisation.models import Organisation, Object, Form, TypeLift, StreetType, CityType, LiftDesign, Protocol
 
 
 class TypeLetter(models.Model):
@@ -98,4 +98,15 @@ class Contract(models.Model):
 class WorkRequest(models.Model):
     contract = models.ForeignKey(Contract, on_delete=models.PROTECT)
     form = models.ForeignKey(Form, on_delete=models.PROTECT, null=True)
-    object = models.ManyToManyField(Object)
+    object_req = models.ManyToManyField(
+        Object,
+        through='ObjRequest',
+        through_fields=('work_request', 'object')
+    )
+
+
+class ObjRequest(models.Model):
+    work_request = models.ForeignKey(WorkRequest, on_delete=models.PROTECT)
+    object = models.ForeignKey(Object, on_delete=models.PROTECT)
+    protocol = models.OneToOneField(Protocol, on_delete=models.PROTECT, null=True)
+

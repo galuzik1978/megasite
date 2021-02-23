@@ -1223,7 +1223,7 @@ tables = {
                     'text': 'Объект',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
-                    'name': "city+street+building",
+                    'name': "address",
                     'value': "",
                     'subtable': 'object',
                     'filters': [
@@ -2051,22 +2051,16 @@ tables = {
                 'value': 'postcode',
             },
             {
-                'text': 'Регион',
-                'align': 'center',
-                'sortable': True,
-                'value': 'region',
-            },
-            {
                 'text': 'Адрес',
                 'align': 'center',
                 'sortable': True,
-                'value': 'city_type + city + street_type + street + building + entrance + office',
+                'value': 'address',
             },
             {
-                'text': 'Скорость лифта',
+                'text': 'Форма контроля',
                 'align': 'center',
                 'sortable': True,
-                'value': 'speed',
+                'value': 'form.name',
             },
             {
                 'text': 'Дата поверки',

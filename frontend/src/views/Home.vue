@@ -46,6 +46,21 @@
             </v-list-item-content>
           </v-list-item>
           <v-list-item
+            :key="95"
+            link
+            @click="change_data('undefined', '/objects')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-cube-scan</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Объекты контроля
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+          <v-list-item
             :key="100"
             link
             @click="change_data('undefined', '/query/0')"
@@ -93,7 +108,7 @@
           <v-list-item
             :key="130"
             link
-            @click="change_data('undefined', '/protocol')"
+            @click="change_data('undefined', '/protocol/5/')"
             active-class="active-menu-btn"
           >
             <v-list-item-action style="width:24px">

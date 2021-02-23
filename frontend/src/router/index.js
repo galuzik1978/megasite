@@ -6,12 +6,20 @@ import Login from '../views/Login.vue'
 import List from '../components/List.vue'
 import Video from '../components/Video.vue'
 import Query from '../views/Query.vue'
+import Objects from "../views/Objects.vue"
 import Inspection from '../views/Inspection.vue'
 import CreateForm from '../views/CreateForm.vue'
 import Protocol from '../views/Protocol.vue'
 import Contracts from '../views/Contracts.vue'
 
 Vue.use(VueRouter)
+
+function dynamicPropsFn (route) {
+  return {
+    wr_id: parseInt(route.params.wr),
+    obj_id: parseInt(route.params.id)
+  }
+}
 
   const routes = [
   {
@@ -39,6 +47,12 @@ Vue.use(VueRouter)
         props: true
       },
       {
+        path: 'objects',
+        name: 'Objects',
+        component: Objects,
+        props: true
+      },
+      {
         path:'inspection',
         name: 'Inspection',
         component: Inspection
@@ -49,9 +63,10 @@ Vue.use(VueRouter)
         component: CreateForm
       },
       {
-        path: 'protocol',
+        path: 'protocol/:id',
         name: 'Protocol',
-        component: Protocol
+        component: Protocol,
+        props: dynamicPropsFn
       },
       {
         path: 'contracts',

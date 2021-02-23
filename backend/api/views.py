@@ -20,12 +20,12 @@ from api.serializers import InboxSer, OutboxSer, SenderSer, ProfileSer, RoleSer,
     StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer, \
     get_organization_by_inn, ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
-    ProtocolAnnexSer, RulesSer, hint_address
+    ProtocolAnnexSer, RulesSer, hint_address, WorkRequestListSer, ObjRequestSer, FullProtocolSer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
-from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest
+from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
 from util.customize import tables
 from util.functions import capacity_text_to_decimal
@@ -256,6 +256,27 @@ class ProtocolApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Protocol.objects.all()
     serializer_class = ProtocolSer
+    
+    def retrieve(self, request, *args, **kwargs):
+        exam_object = ObjRequest.objects.get(**kwargs)
+        protocol = exam_object.protocol
+        if protocol is None:
+            # Создаем новый протокол
+            protocol = Protocol.objects.create(
+                form=exam_object.work_request.form
+            )
+        data = protocol.form
+        data.object = exam_object.object
+        data.tables = data.table_set.all()
+        for table in data.tables:
+            table.header = table.header_set.all()
+            table.row = table.row_set.all()
+            for row in table.row:
+                row.sell = row.sell_set.all()
+                for sell in row.sell_set.all():
+                    sell.sell_value = sell.sellvalue_set.all()
+        return Response(FullProtocolSer(data).data)
+
 
 
 class DeviceApiView(viewsets.ModelViewSet):
@@ -525,7 +546,7 @@ class WorkRequestView(APIView):
             try:
                 type_lift = TypeLift.objects.get(name=obj['type_lift']['name'])
             except TypeLift.DoesNotExist:
-                type_lift = TypeLift(name=obj['type']['name'])
+                type_lift = TypeLift(name=obj['type_lift']['name'])
                 type_lift.save()
             if obj.get('id', False):
                 # Если заявка уже зарегистрирована
@@ -546,7 +567,7 @@ class WorkRequestView(APIView):
                 work_object.save()
             else:
                 work_object = Object(
-                    postcode=int(address['postcode']) if address['postcode'] != 'null' else None,
+                    postcode=int(address['postcode']) if address['postcode'] else None,
                     region=address['region'],
                     city_type=city_type,
                     city=address['city'],
@@ -563,6 +584,8 @@ class WorkRequestView(APIView):
                 work_object.save()
                 work_request.object.add(work_object)
 
+        work_request.form = form
+        work_request.save()
         response_status = status.HTTP_200_OK
         return Response("", status=response_status)
 
@@ -583,8 +606,24 @@ class WorkRequestView(APIView):
             'form': work_request.form,
             'contract': contract,
             'all_forms': Form.objects.all(),
-            'objects': work_request.object.all()
+            'objects': work_request.object_req.all()
         }
         serializer = WorkRequestSer(data)
         response_status = status.HTTP_200_OK
         return Response(serializer.data, status=response_status)
+
+
+class WorkRequestListView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        """
+        Return a list of all users.
+        """
+        data = {
+            'work_requests': WorkRequest.objects.all()
+        }
+        obj = ObjRequest.objects.all()
+        res = ObjRequestSer(obj, many=True)
+        return Response(res.data)

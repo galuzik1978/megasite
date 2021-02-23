@@ -10,7 +10,8 @@ from rest_framework.response import Response
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
-from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus
+from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus, WorkRequest, \
+    ObjRequest
 from user_profile.models import Profile, Role
 from util.customize import Company_INN, Company_Phone
 
@@ -462,6 +463,7 @@ class ObjectSer(serializers.ModelSerializer):
     date_exam = serializers.DateField(format="%Y-%m")
     type_lift = TypeLiftSer()
     address = serializers.SerializerMethodField('get_address')
+    form = serializers.SerializerMethodField('get_form')
 
     class Meta:
         model = Object
@@ -481,7 +483,8 @@ class ObjectSer(serializers.ModelSerializer):
             'floors',
             'date_exam',
             'address',
-            'lift_design'
+            'lift_design',
+            'form'
         )
 
     def get_address(self, work_object):
@@ -493,6 +496,12 @@ class ObjectSer(serializers.ModelSerializer):
             work_object.building
         )
         return str
+
+    def get_form(self, work_object):
+        if len(work_object.workrequest_set.all())>0:
+            return FormsSer(work_object.workrequest_set.get().form).data
+        else:
+            return None
 
     def __init__(self, *args, **kwargs):
         kwargs['partial'] = True
@@ -537,16 +546,6 @@ class ObjectSer(serializers.ModelSerializer):
                 setattr(instance, attr, data)
         instance.save()
         return instance
-
-
-class ProtocolSer(serializers.ModelSerializer):
-    class Meta:
-        model = Protocol
-        fields = '__all__'
-
-    def __init__(self, *args, **kwargs):
-        kwargs['partial'] = True
-        super(ProtocolSer, self).__init__(*args, **kwargs)
 
 
 class DeviceSer(serializers.ModelSerializer):
@@ -667,6 +666,18 @@ class FormsSer(serializers.Serializer):
     table = TablesSer(many=True, required=False)
 
 
+class ProtocolSer(serializers.ModelSerializer):
+    form = FormsSer()
+
+    class Meta:
+        model = Protocol
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        kwargs['partial'] = True
+        super(ProtocolSer, self).__init__(*args, **kwargs)
+
+
 class AllFormsSer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -699,6 +710,25 @@ class ProtocolSer(serializers.Serializer):
     customer_person = UserAuthSer()
     owner_person = UserAuthSer()
     form = FormsSer()
+
+
+class ObjRequestSer(serializers.ModelSerializer):
+    object = ObjectSer()
+    protocol = ProtocolSer(required=False)
+
+    class Meta:
+        model = ObjRequest
+        fields = '__all__'
+
+
+class WorkRequestListSer(serializers.ModelSerializer):
+    contract = ContractSer()
+    form = FormsSer()
+    object_req = ObjRequestSer(many=True)
+
+    class Meta:
+        model = WorkRequest
+        fields = '__all__'
 
 
 class SellValueSer(serializers.Serializer):
@@ -749,3 +779,29 @@ class RulesSer(serializers.Serializer):
     id = serializers.IntegerField()
     sell = SellSer()
     rule = serializers.CharField()
+
+
+class FullSellSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    text = serializers.CharField()
+    value = serializers.CharField()
+    sell_value = SellValueSer(required=False)
+
+
+class FullRowSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    sell = FullSellSer(many=True)
+
+
+class FullTablesSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    header = HeaderSer(many=True)
+    row = FullRowSer(many=True)
+
+
+class FullProtocolSer(serializers.Serializer):
+    tables = FullTablesSer(many=True)
+    object = ObjectSer()
+
