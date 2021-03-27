@@ -651,7 +651,30 @@ class HeaderSer(serializers.Serializer):
     editable = serializers.BooleanField()
     value = serializers.CharField()
     selectchoices = SelectChoicesSer(many=True, required=False)
+    column = serializers.CharField(required=False)
 
+
+class DocumentSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+
+
+class ReasonSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    document = DocumentSer()
+    point = serializers.CharField()
+    phrasing = serializers.CharField()
+
+
+class DefectSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    reason = ReasonSer()
+    phrasing = serializers.CharField()
+
+
+class RowDefectsSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    defect = DefectSer()
 
 class TablesSer(serializers.Serializer):
     id = serializers.IntegerField()
@@ -702,7 +725,6 @@ class ProtocolSer(serializers.Serializer):
     num = serializers.CharField()
     date_act = serializers.DateField()
     date_protocol = serializers.DateField()
-    object_exam = ObjectSer()
     customer = OrganisationSer()
     owner = OrganisationSer()
     worker = UserAuthSer()
@@ -737,30 +759,6 @@ class SellValueSer(serializers.Serializer):
     value = serializers.CharField()
 
 
-class DocumentSer(serializers.Serializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-
-
-class ReasonSer(serializers.Serializer):
-    id = serializers.IntegerField()
-    document = DocumentSer()
-    point = serializers.CharField()
-    phrasing = serializers.CharField()
-
-
-class DefectSer(serializers.Serializer):
-    id = serializers.IntegerField()
-    reason = ReasonSer()
-    phrasing = serializers.CharField()
-
-
-class RowDefectsSer(serializers.Serializer):
-    id = serializers.IntegerField()
-    row = RowSer()
-    defect = DefectSer()
-
-
 class ObservedDefectSer(serializers.Serializer):
     id = serializers.IntegerField()
     sell_value = SellValueSer()
@@ -788,6 +786,15 @@ class FullSellSer(serializers.Serializer):
     sell_value = SellValueSer(required=False)
 
 
+class AnnexSer(serializers.Serializer):
+    filename = serializers.FilePathField("./")
+    filesize = serializers.SerializerMethodField('get_file_size')
+    file = serializers.FileField()
+
+    def get_file_size(self, obj):
+        return "{} kb".format(obj.file.size/1000)
+
+
 class FullRowSer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
@@ -798,10 +805,19 @@ class FullTablesSer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     header = HeaderSer(many=True)
-    row = FullRowSer(many=True)
+    dataset = serializers.ListField()
+    collapse = serializers.BooleanField()
+    defects = serializers.ListField()
+    defects_header = serializers.ListField()
+    annex_table = AnnexSer(many=True)
 
 
 class FullProtocolSer(serializers.Serializer):
     tables = FullTablesSer(many=True)
+    annex_table = AnnexSer(many=True)
+    annex_table_headers = serializers.ListField()
     object = ObjectSer()
 
+
+class FileFieldTestSer(serializers.Serializer):
+    file = serializers.FileField()

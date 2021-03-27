@@ -1,12 +1,14 @@
 from rest_framework import routers
 from django.urls import path, include
 
+import api.InnRequestViews
+import api.PostHandlerViews
 from api import views
 from rest_framework.authtoken import views as rest_views
 
 router = routers.DefaultRouter()
-router.register(r'inbox', views.InboxApiView)
-router.register(r'outbox', views.OutboxApiView)
+router.register(r'inbox', api.PostHandlerViews.InboxApiView)
+router.register(r'outbox', api.PostHandlerViews.OutboxApiView)
 router.register(r'sender', views.SenderApiView)
 router.register(r'manager', views.ManagerApiView)
 router.register(r'profile', views.ProfileApiView)
@@ -42,16 +44,16 @@ router.register(r'device', views.DeviceApiView)
 urlpatterns = [
     path('', views.MainPageView.as_view(), name='main'),
     path('api/', include (router.urls), name='api'),
-    path('inbox/decline/<int:inbox>/', views.InboxDeclineView.as_view(), name='inboxDecline'),
-    path('inbox/accept/<int:inbox>/', views.InboxAcceptView.as_view(), name='inboxAccept'),
+    path('inbox/decline/<int:inbox>/', api.PostHandlerViews.InboxDeclineView.as_view(), name='inboxDecline'),
+    path('inbox/accept/<int:inbox>/', api.PostHandlerViews.InboxAcceptView.as_view(), name='inboxAccept'),
     # path('api-token-auth/', rest_views.obtain_auth_token),
     path('api-token-auth/', views.CustomApiLoginView.as_view()),
-    path('api/innrequest/', views.InnRequestView.as_view()),
+    path('api/innrequest/', api.InnRequestViews.InnRequestView.as_view()),
     path('template/', views.TemplateView.as_view(), name='template'),
     path('contract/create_by_inbox/<int:inbox>/', views.CreateContractByInboxView.as_view(), name="ContractByInbox"),
     path('get_blank/', views.GetBlankView.as_view()),
     path('forms/', views.FormsView.as_view(), name='template'),
     path('api/workrequest/<int:contract>/', views.WorkRequestView.as_view(), name='newWorkRequest'),
     path('api/workrequest/', views.WorkRequestListView.as_view(), name='WorkRequestList'),
-
+    path('api/testfilefield/', views.FileFieldTestView.as_view(), name='FileFieldTest'),
 ]

@@ -1,10 +1,10 @@
 from datetime import datetime
 
+import django
 from django.contrib.auth.models import User
 from django.http import JsonResponse, FileResponse
 from django.views.generic import TemplateView
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions, authentication, filters, status
+from rest_framework import viewsets, permissions, authentication, status
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -14,18 +14,19 @@ from rest_framework.views import APIView
 from util import customize
 from util.Mixins import FormMenuMixin
 
-from api.serializers import InboxSer, OutboxSer, SenderSer, ProfileSer, RoleSer, CustomerSer, TypeLetterSer, \
+from api.serializers import InboxSer, SenderSer, ProfileSer, RoleSer, CustomerSer, TypeLetterSer, \
     SendStatusSer, TypeWorkSer, ContractSer, StatusSer, TaskStatusSer, EventTypeSer, MainWorkSer, TaskSer, MessageSer, \
     TypeCustomerSer, CityTypeSer, StreetTypeSer, TypeLiftSer, LiftDesignSer, TypeProtocolSer, DeviceSetSer, \
     StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer, \
-    get_organization_by_inn, ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
+    ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
-    ProtocolAnnexSer, RulesSer, hint_address, WorkRequestListSer, ObjRequestSer, FullProtocolSer
+    ProtocolAnnexSer, RulesSer, hint_address, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
-    StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form
+    StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, Table, Row, SellValue, \
+    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
-from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
+from postoffice.models import Inbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
 from util.customize import tables
 from util.functions import capacity_text_to_decimal
@@ -33,22 +34,6 @@ from util.functions import capacity_text_to_decimal
 
 class MainPageView(FormMenuMixin, TemplateView):
     template_name = "vue/index.html"
-
-
-class InboxApiView(viewsets.ModelViewSet):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = Inbox.objects.all().order_by('date')
-    serializer_class = InboxSer
-    filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['send_status__name', 'sender__id', 'customer_id']
-
-
-class OutboxApiView(viewsets.ModelViewSet):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = Outbox.objects.all().order_by('date')
-    serializer_class = OutboxSer
 
 
 class SenderApiView(viewsets.ModelViewSet):
@@ -265,18 +250,188 @@ class ProtocolApiView(viewsets.ModelViewSet):
             protocol = Protocol.objects.create(
                 form=exam_object.work_request.form
             )
+            exam_object.protocol = protocol
+            exam_object.save()
         data = protocol.form
         data.object = exam_object.object
         data.tables = data.table_set.all()
+        protocol_annex = protocol.protocolannex_set.filter(table_id__isnull=True)
+        data.annex_table = protocol_annex
+        data.annex_table_headers = [
+            {
+                'text': "№ п/п",
+                'value': 'num',
+                'width': '5%',
+            },
+            {
+                'text': "Изображение",
+                'value': 'img',
+                'width': '30%',
+            },
+            {
+                'text': "Имя файла",
+                'value': 'filename',
+                'width': '30%',
+            },
+            {
+                'text': "Размер файла",
+                'value': 'filesize',
+                'width': '20%',
+            },
+            {
+                'text': "Удалить",
+                'value': 'actions',
+                'width': '15%',
+            },
+        ]
         for table in data.tables:
             table.header = table.header_set.all()
-            table.row = table.row_set.all()
-            for row in table.row:
-                row.sell = row.sell_set.all()
-                for sell in row.sell_set.all():
-                    sell.sell_value = sell.sellvalue_set.all()
-        return Response(FullProtocolSer(data).data)
+            for header in table.header:
+                header.selectchoices = header.selectchoices_set.all()
+            table.defects_header = [
+                {
+                    "text": '№ п/п',
+                    "align": 'start',
+                    "sortable": False,
+                    "value": 'num',
+                    "width": '5%'
+                },
+                {"text": 'Наименование составных элементов электрооборудования лифта', "value": 'phrasing', "width": '30%'},
+                {"text": 'Нормативная документация и перечень пунктов, устанавливающих требования', "value": 'document',
+                 "width": '30%'},
+                {"text": '', "value": 'delete_action', "width": '5%'},
+            ]
+            table.annex_table = protocol.protocolannex_set.filter(table_id=table).filter(row_id__isnull=True)
+            table.defects = []
+            for defect in table.rowdefects_set.all():
+                table.defects.append(
+                    {
+                        'document':defect.defect.reason.document.name,
+                        'phrasing':defect.defect.phrasing
+                    }
+                )
+            rows = table.row_set.all()
+            table.dataset = []
+            for row in rows:
+                dataset = {
+                    'num': row.id,
+                    'annex_table': AnnexSer(
+                        protocol.protocolannex_set.filter(row_id=row),
+                        many=True
+                    ).data,
+                    'defects':[]
+                }
+                sells = row.sell_set.all()
+                for sell in sells:
+                    sell.sell_value = sell.sellvalue_set.all().first()
+                    if sell.sell_value is None :
+                        dataset[sell.value] = sell.text
+                    else:
+                        dataset[sell.value] = sell.sell_value.value
+                        for defect in sell.sell_value.observeddefect_set.all():
+                            dataset['defects'].append({
+                                'document': defect.defect.reason.document.name,
+                                'phrasing': defect.defect.phrasing
+                            })
 
+                table.dataset.append(dataset)
+                table.collapse = True
+        return Response(FullProtocolSer(data).data)
+    
+    def update(self, request, *args, **kwargs):
+        data = json.loads(request.data['data'])
+
+        # Получим экземпляр обновляемого протокола из базы данных
+        exam_object = ObjRequest.objects.get(**kwargs)
+        protocol = exam_object.protocol
+
+        # Обновим приложения, привязанные непосредственно к протоколу
+
+        # Удаляем приложения, отсутствующие во вновь получнных данных
+        annex_filenames = [annex['filename'] for annex in data['annex_table']]
+        for annex in protocol.protocolannex_set.filter(table__isnull=True):
+            if (annex.filename in annex_filenames) == False:
+                annex.delete()
+
+        # Добавим новые приложения, отсутствующие в базе
+        for annex in data['annex_table']:
+            if len(protocol.protocolannex_set.filter(filename=annex['filename']))==0:
+                ProtocolAnnex.objects.create(
+                    protocol=protocol,
+                    filename=annex['filename'],
+                    file=request.FILES['file_{}'.format(annex['img'])],
+                )
+
+        # Заполним SellValue получеными данными
+        for t in data['tables']:
+            table = Table.objects.get(pk=t['id'])
+            # Удаляем приложения, отсутствующие во вновь получнных данных
+            annex_filenames = [annex['filename'] for annex in t['annex_table']]
+            for annex in protocol.protocolannex_set.filter(table=table).filter(row__isnull=True):
+                if (annex.filename in annex_filenames) == False:
+                    annex.delete()
+
+            for annex in t['annex_table']:
+                if len(protocol.protocolannex_set.filter(table=table).filter(filename=annex['filename'])) == 0:
+                    ProtocolAnnex.objects.create(
+                        protocol=protocol,
+                        table=table,
+                        filename=annex['filename'],
+                        file=request.FILES['file_{}'.format(annex['img'])],
+                    )
+            # Выбиаем из заголовков только те поля, в которых задано значение column
+            headers = table.header_set.filter(column__isnull=False)
+            for r in t['dataset']:
+                row = Row.objects.get(pk=r['num'])
+                # Удаляем приложения, отсутствующие во вновь получнных данных
+                annex_filenames = [annex['filename'] for annex in r['annex_table']]
+                for annex in protocol.protocolannex_set.filter(table=table).filter(row=row):
+                    if (annex.filename in annex_filenames) == False:
+                        annex.delete()
+                for annex in r['annex_table']:
+                    if len(protocol.protocolannex_set.filter(table=table).filter(row=row).filter(filename=annex['filename'])) == 0:
+                        ProtocolAnnex.objects.create(
+                            protocol=protocol,
+                            table=table,
+                            row=row,
+                            filename=annex['filename'],
+                            file=request.FILES['file_{}'.format(annex['img'])],
+                        )
+                # Вибираем ячейки, совпадающие с именем в заголовке
+                for header in headers:
+                    sell = row.sell_set.get(value=header.column)
+                    try:
+                        sell_value = sell.sellvalue_set.get(protocol=protocol)
+                        sell_value.value = r[header.column]
+                        sell_value.save()
+                    except  SellValue.DoesNotExist as err:
+                        sell_value = SellValue.objects.create(sell=sell, protocol=protocol, value=r[header.column])
+                    except django.db.utils.IntegrityError as err:
+                        pass
+                    # Удаляем дефекты, отсутствующие в полученных данных из базы
+                    old_defects = sell_value.observeddefect_set.all()
+                    for old in old_defects:
+                        if ({'document':old.document, 'phrasing':old.phrasing} in r['defects']) == False:
+                            old.delete()
+
+                    # Добавляем новые дефекты, отсутствующие в базе
+                    try:
+                        for defect in r['defects']:
+                            # Находим отмеченный дефект в базе
+                            doc = Document.objects.filter(name=defect['document']).first()
+                            reason_phrase = defect['phrasing'].split(":")[1].strip()
+                            reason = doc.reason_set.get(phrasing=reason_phrase)
+                            new_defect = DefectList.objects.filter(reason=reason).get(phrasing=defect['phrasing'])
+                            if len(old_defects.filter(defect=new_defect)) == 0:
+                                ObservedDefect.objects.create(
+                                    sell_value=sell_value,
+                                    defect=new_defect
+                                )
+                    except KeyError:
+                        pass
+
+        response_status = status.HTTP_200_OK
+        return Response("Данные успешно обновлены", status=response_status)
 
 
 class DeviceApiView(viewsets.ModelViewSet):
@@ -317,57 +472,6 @@ class CustomApiLoginView(ObtainAuthToken):
             'logo': customize.LOGO,
             'company': customize.COMPANY
         })
-
-
-class InnRequestView(APIView):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    @staticmethod
-    def get(request, format=None):
-        inn = request.query_params['inn']
-        return get_organization_by_inn(inn, request)
-
-    @staticmethod
-    def post(request, format=None):
-        inn = request.query_params['inn']
-        return get_organization_by_inn(inn, request)
-
-
-class InboxDeclineView(APIView):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    @staticmethod
-    def post(request, *args, **kwargs):
-        inbox = Inbox.objects.get(pk=kwargs['inbox'])
-        try:
-            send_status = SendStatus.objects.get(name="Отклонено")
-        except SendStatus.DoesNotExist as err:
-            send_status = SendStatus.objects.create(name="Отклонено")
-        inbox.send_status = send_status
-        inbox.save()
-        serializer = InboxSer(inbox)
-        response_status = status.HTTP_200_OK
-        return Response(serializer.data, status=response_status)
-
-
-class InboxAcceptView(APIView):
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    @staticmethod
-    def post(request, *args, **kwargs):
-        inbox = Inbox.objects.get(pk=kwargs['inbox'])
-        try:
-            send_status = SendStatus.objects.get(name="В работе")
-        except SendStatus.DoesNotExist as err:
-            send_status = SendStatus.objects.create(name="В работе")
-        inbox.send_status = send_status
-        inbox.save()
-        serializer = InboxSer(inbox)
-        response_status = status.HTTP_200_OK
-        return Response(serializer.data, status=response_status)
 
 
 class CreateContractByInboxView(APIView):
@@ -626,4 +730,18 @@ class WorkRequestListView(APIView):
         }
         obj = ObjRequest.objects.all()
         res = ObjRequestSer(obj, many=True)
+        return Response(res.data)
+
+
+class FileFieldTestView(APIView):
+    authentication_classes = [authentication.BasicAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        inboxes = Inbox.objects.all()
+        files =  []
+        for inbox in inboxes:
+            if inbox.annex.name:
+                files.append({'file':inbox.annex})
+        res = FileFieldTestSer(files, many=True)
         return Response(res.data)

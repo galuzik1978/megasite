@@ -193,7 +193,7 @@ class Protocol(models.Model):
     form = models.ForeignKey(Form, on_delete=models.PROTECT, blank=True, null=True)
 
     def __str__(self):
-        return "{} от {} {}".format(self.num, self.date_act, self.object_exam)
+        return "{} от {}".format(self.num, self.date_act)
 
 
 class Device(models.Model):
@@ -238,8 +238,9 @@ class DefectList(models.Model):
 
     def __str__(self):
         return "Док. {} п. {}".format(
-            self.document,
-            self.point)
+            self.reason.document.name,
+            self.phrasing
+        )
 
 
 class Table(models.Model):
@@ -269,6 +270,7 @@ class Header(models.Model):
     value = models.CharField(max_length=255, verbose_name="Наименование данных столбца", blank=True, null=True)
     width = models.CharField(max_length=5, verbose_name="Относительная ширина столбца", blank=True, null=True)
     editable = models.BooleanField(blank=True, null=True)
+    column = models.CharField(max_length=50, null=True)
 
 
 class Row(models.Model):
@@ -291,12 +293,12 @@ class SelectChoices(models.Model):
 class SellValue(models.Model):
     sell = models.ForeignKey(Sell, on_delete=models.PROTECT)
     protocol = models.ForeignKey(Protocol, on_delete=models.PROTECT)
-    value = models.CharField(max_length=255, verbose_name="Содержимое ячейки")
+    value = models.CharField(null=True, max_length=255, verbose_name="Содержимое ячейки")
 
 
 # Список возможных дефектов для каждой строки протокола
 class RowDefects(models.Model):
-    row = models.ForeignKey(Row, on_delete=models.PROTECT)
+    table = models.ForeignKey(Table, on_delete=models.PROTECT)
     defect = models.ForeignKey(DefectList, on_delete=models.PROTECT)
 
 
@@ -312,12 +314,8 @@ class Rules(models.Model):
 
 
 class ProtocolAnnex(models.Model):
-    ANNEX_TYPES = [
-        (0, 'row'),
-        (1, 'table'),
-        (2, 'protocol'),
-    ]
-    sell_value = models.ForeignKey(SellValue, on_delete=models.PROTECT, null=True)
-    type = models.SmallIntegerField(choices=ANNEX_TYPES)
-    name = models.CharField(max_length=50, verbose_name="Имя файла")
+    protocol = models.ForeignKey(Protocol, on_delete=models.PROTECT)
+    table = models.ForeignKey(Table,on_delete=models.PROTECT, null=True)
+    row = models.ForeignKey(Row,on_delete=models.PROTECT, null=True)
+    filename = models.CharField(max_length=50, verbose_name="Имя файла")
     file = models.FileField(upload_to="ProtocolAnnex")
