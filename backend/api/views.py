@@ -285,7 +285,7 @@ class ProtocolApiView(viewsets.ModelViewSet):
             },
         ]
         for table in data.tables:
-            table.header = table.header_set.all()
+            table.header = table.header_set.all().order_by('id')
             for header in table.header:
                 header.selectchoices = header.selectchoices_set.all()
             table.defects_header = [
@@ -312,9 +312,10 @@ class ProtocolApiView(viewsets.ModelViewSet):
                 )
             rows = table.row_set.all()
             table.dataset = []
-            for row in rows:
+            for num, row in enumerate(rows):
                 dataset = {
-                    'num': row.id,
+                    'num': num + 1,
+                    'id': row.id,
                     'annex_table': AnnexSer(
                         protocol.protocolannex_set.filter(row_id=row),
                         many=True
@@ -323,7 +324,7 @@ class ProtocolApiView(viewsets.ModelViewSet):
                 }
                 sells = row.sell_set.all()
                 for sell in sells:
-                    sell.sell_value = sell.sellvalue_set.all().first()
+                    sell.sell_value = sell.sellvalue_set.filter(protocol=protocol).first()
                     if sell.sell_value is None :
                         dataset[sell.value] = sell.text
                     else:
@@ -379,10 +380,10 @@ class ProtocolApiView(viewsets.ModelViewSet):
                         filename=annex['filename'],
                         file=request.FILES['file_{}'.format(annex['img'])],
                     )
-            # Выбиаем из заголовков только те поля, в которых задано значение column
-            headers = table.header_set.filter(column__isnull=False)
+            # Выбиаем из заголовков только те поля, в которых задано значение data
+            headers = table.header_set.filter(data__isnull=False)
             for r in t['dataset']:
-                row = Row.objects.get(pk=r['num'])
+                row = Row.objects.get(pk=r['id'])
                 # Удаляем приложения, отсутствующие во вновь получнных данных
                 annex_filenames = [annex['filename'] for annex in r['annex_table']]
                 for annex in protocol.protocolannex_set.filter(table=table).filter(row=row):
@@ -399,19 +400,20 @@ class ProtocolApiView(viewsets.ModelViewSet):
                         )
                 # Вибираем ячейки, совпадающие с именем в заголовке
                 for header in headers:
-                    sell = row.sell_set.get(value=header.column)
+                    print(header.data)
+                    sell = row.sell_set.get(value=header.data)
                     try:
                         sell_value = sell.sellvalue_set.get(protocol=protocol)
-                        sell_value.value = r[header.column]
+                        sell_value.value = r[header.data]
                         sell_value.save()
                     except  SellValue.DoesNotExist as err:
-                        sell_value = SellValue.objects.create(sell=sell, protocol=protocol, value=r[header.column])
+                        sell_value = SellValue.objects.create(sell=sell, protocol=protocol, value=r[header.data])
                     except django.db.utils.IntegrityError as err:
                         pass
                     # Удаляем дефекты, отсутствующие в полученных данных из базы
                     old_defects = sell_value.observeddefect_set.all()
                     for old in old_defects:
-                        if ({'document':old.document, 'phrasing':old.phrasing} in r['defects']) == False:
+                        if ({'document':old.defect.reason.document.name, 'phrasing':old.defect.phrasing} in r['defects']) == False:
                             old.delete()
 
                     # Добавляем новые дефекты, отсутствующие в базе

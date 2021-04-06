@@ -270,7 +270,7 @@ class Header(models.Model):
     value = models.CharField(max_length=255, verbose_name="Наименование данных столбца", blank=True, null=True)
     width = models.CharField(max_length=5, verbose_name="Относительная ширина столбца", blank=True, null=True)
     editable = models.BooleanField(blank=True, null=True)
-    column = models.CharField(max_length=50, null=True)
+    data = models.CharField(max_length=50, null=True)
 
 
 class Row(models.Model):

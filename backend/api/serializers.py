@@ -651,7 +651,7 @@ class HeaderSer(serializers.Serializer):
     editable = serializers.BooleanField()
     value = serializers.CharField()
     selectchoices = SelectChoicesSer(many=True, required=False)
-    column = serializers.CharField(required=False)
+    data = serializers.CharField(required=False)
 
 
 class DocumentSer(serializers.Serializer):
