@@ -632,7 +632,7 @@ class WorkRequestView(APIView):
             work_request.save()
         # Удаляем заявки текущего договора, отсутствующие в полученном запросе, но присутствующие в базе
         objects_id = [row.get('id') for row in table_rows]
-        for work_object in work_request.object.all():
+        for work_object in work_request.object_req.all():
             if work_object.id not in objects_id:
                 work_object.delete()
         for obj in table_rows:
@@ -656,7 +656,7 @@ class WorkRequestView(APIView):
                 type_lift.save()
             if obj.get('id', False):
                 # Если заявка уже зарегистрирована
-                work_object = work_request.object.get(pk=obj['id'])
+                work_object = work_request.object_req.get(pk=obj['id'])
                 work_object.postcode = int(address['postcode'])if address['postcode'] != 'null' else None
                 work_object.region = address['region']
                 work_object.city = address['city']
@@ -688,7 +688,7 @@ class WorkRequestView(APIView):
                     date_exam=datetime.strptime(obj['date_exam'], '%Y-%m').date(),
                 )
                 work_object.save()
-                work_request.object.add(work_object)
+                work_request.object_req.add(work_object)
 
         work_request.form = form
         work_request.save()
