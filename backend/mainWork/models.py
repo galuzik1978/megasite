@@ -48,6 +48,11 @@ class MainWork(models.Model):
         verbose_name="Представитель заказчика"
     )
 
+    def __str__(self):
+        return "Заявка по {} от {}".format(
+            self.inbox.name,
+            self.inbox.date
+        )
 
 class Task(models.Model):
     work_flow = models.ForeignKey(MainWork, on_delete=models.PROTECT, verbose_name="Работа")
@@ -64,6 +69,12 @@ class Task(models.Model):
     status = models.ForeignKey(TaskStatus, on_delete=models.PROTECT, verbose_name="Статус")
     estimate = models.PositiveSmallIntegerField(null=True, blank=True, verbose_name="Оценка выполения задачи")
 
+    def __str__(self):
+        return "Задача по {} для {}".format(
+            self.title,
+            self.executor.name
+        )
+
 
 class Message(models.Model):
     task = models.ForeignKey(Task, on_delete=models.PROTECT, verbose_name="Задача")
@@ -77,3 +88,9 @@ class Message(models.Model):
     title = models.CharField(max_length=150, verbose_name="Заголовок")
     content = models.TextField(verbose_name="Краткое описание")
     annex = models.FileField(upload_to="mainWork/static", verbose_name="Приложение", null=True, blank=True)
+
+    def __str__(self):
+        return "Сообщение {} от {}".format(
+            self.title,
+            self.sender.name,
+        )

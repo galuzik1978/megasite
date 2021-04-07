@@ -160,12 +160,12 @@ class SenderSer(serializers.ModelSerializer):
         user_data = {
             'username': self.initial_data['email'],
             'first_name': self.initial_data['first_name'],
-            'last_name': self.initial_data['name'],
+            'last_name': self.initial_data['last_name'],
             'email': self.initial_data['email'],
         }
-        role_pk = json.loads(self.initial_data['role'])['id']
+        role_pk = json.loads(self.initial_data['profile.role'])['id']
         role = Role.objects.get(pk=role_pk)
-        customer_pk = json.loads(self.initial_data['customer'])['id']
+        customer_pk = json.loads(self.initial_data['profile.organisation'])['id']
         customer = Organisation.objects.get(pk=customer_pk)
         user = User(** user_data)
         user.save()

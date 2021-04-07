@@ -1,3 +1,40 @@
 from django.contrib import admin
 
-# Register your models here.
+from organisation.models import TypeOrganisation, ChoiceName, FormType, Element, Group, CityType, StreetType, TypeLift, \
+    LiftDesign, TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Organisation, Object, \
+    Form, Protocol, Device, Document, Reason, DefectList, Table, Header, Row, Sell, SelectChoices, SellValue, \
+    RowDefects, ObservedDefect, Rules, ProtocolAnnex
+
+admin.site.register(TypeOrganisation)
+admin.site.register(ChoiceName)
+admin.site.register(FormType)
+admin.site.register(Element)
+admin.site.register(Group)
+admin.site.register(CityType)
+admin.site.register(StreetType)
+admin.site.register(TypeLift)
+admin.site.register(LiftDesign)
+admin.site.register(TypeProtocol)
+admin.site.register(DeviceSet)
+admin.site.register(StatusDevice)
+admin.site.register(TypeDevice)
+admin.site.register(RangeMeasure)
+admin.site.register(AccuracyClass)
+admin.site.register(Organisation)
+admin.site.register(Object)
+admin.site.register(Form)
+admin.site.register(Protocol)
+admin.site.register(Device)
+admin.site.register(Document)
+admin.site.register(Reason)
+admin.site.register(DefectList)
+admin.site.register(Table)
+admin.site.register(Header)
+admin.site.register(Row)
+admin.site.register(Sell)
+admin.site.register(SelectChoices)
+admin.site.register(SellValue)
+admin.site.register(RowDefects)
+admin.site.register(ObservedDefect)
+admin.site.register(Rules)
+admin.site.register(ProtocolAnnex)

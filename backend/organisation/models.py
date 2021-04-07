@@ -166,6 +166,9 @@ class Object(models.Model):
 class Form(models.Model):
     name = models.CharField(max_length=255, verbose_name="Наименование формы")
 
+    def __str__(self):
+        return "{}".format(self.name)
+
 
 class Protocol(models.Model):
     type_protocol = models.ForeignKey(TypeProtocol, on_delete=models.PROTECT, verbose_name="Тип протокола", null=True)
@@ -220,6 +223,9 @@ class Device(models.Model):
 class Document(models.Model):
     name = models.CharField(max_length=255, verbose_name="Документ")
 
+    def __str__(self):
+        return "{}".format(self.name)
+
 
 class Reason(models.Model):
     document = models.ForeignKey(Document, on_delete=models.PROTECT)
@@ -247,6 +253,10 @@ class Table(models.Model):
     form = models.ManyToManyField(Form)
     name = models.CharField(max_length=255, verbose_name="Наименование таблицы")
 
+    def __str__(self):
+        return "{}".format(
+            self.name
+        )
 
 class Header(models.Model):
     ALIGN_CHOICES = [
@@ -272,10 +282,22 @@ class Header(models.Model):
     editable = models.BooleanField(blank=True, null=True)
     data = models.CharField(max_length=50, null=True)
 
+    def __str__(self):
+        return "{} из таб. {}".format(
+            self.text,
+            self.table.name
+        )
+
 
 class Row(models.Model):
     table = models.ForeignKey(Table, on_delete=models.PROTECT)
     name = models.CharField(max_length=255, verbose_name="Наименование строки")
+
+    def __str__(self):
+        return "{} из таб. {}".format(
+            self.name,
+            self.table.name
+        )
 
 
 class Sell(models.Model):
@@ -283,11 +305,24 @@ class Sell(models.Model):
     text = models.CharField(max_length=255, verbose_name="Неизменное содержимое ячейки", blank=True, null=True)
     value = models.CharField(max_length=255, null=True)
 
+    def __str__(self):
+        return "{} из таб. {}".format(
+            self.text,
+            self.row.table.name
+        )
+
 
 class SelectChoices(models.Model):
     header = models.ForeignKey(Header, on_delete=models.PROTECT)
     text = models.CharField(max_length=25)
     value = models.CharField(max_length=25)
+
+    def __str__(self):
+        return "{}, столбец {} из таб. {}".format(
+            self.text,
+            self.header.name,
+            self.header.table.name,
+        )
 
 
 class SellValue(models.Model):
@@ -295,11 +330,25 @@ class SellValue(models.Model):
     protocol = models.ForeignKey(Protocol, on_delete=models.PROTECT)
     value = models.CharField(null=True, max_length=255, verbose_name="Содержимое ячейки")
 
+    def __str__(self):
+        return "Значение {}, из протокола {} от {} равно {}".format(
+            self.sell.text,
+            self.protocol.num,
+            self.protocol.date_act,
+            self.value,
+        )
+
 
 # Список возможных дефектов для каждой строки протокола
 class RowDefects(models.Model):
     table = models.ForeignKey(Table, on_delete=models.PROTECT)
     defect = models.ForeignKey(DefectList, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return "Дефект {}, из таблицы {}".format(
+            self.sell.text,
+            self.table.name,
+        )
 
 
 # Список обнаруженных дефектов
@@ -307,10 +356,21 @@ class ObservedDefect(models.Model):
     sell_value = models.ForeignKey(SellValue, on_delete=models.PROTECT)
     defect = models.ForeignKey(DefectList, on_delete=models.PROTECT)
 
+    def __str__(self):
+        return "Дефект {}, из ячейки {}".format(
+            self.defect.name,
+            self.sell_value.sell.text,
+        )
+
 
 class Rules(models.Model):
     sell = models.ForeignKey(Sell, on_delete=models.ForeignKey)
     rule = models.TextField(verbose_name="Определение правила на JS")
+
+    def __str__(self):
+        return "Правило {}".format(
+            self.rule,
+        )
 
 
 class ProtocolAnnex(models.Model):
@@ -319,3 +379,9 @@ class ProtocolAnnex(models.Model):
     row = models.ForeignKey(Row,on_delete=models.PROTECT, null=True)
     filename = models.CharField(max_length=50, verbose_name="Имя файла")
     file = models.FileField(upload_to="ProtocolAnnex")
+
+    def __str__(self):
+        return "Приложение к протоколу {} от {}".format(
+            self.protocol.num,
+            self.protocol.date_act
+        )
