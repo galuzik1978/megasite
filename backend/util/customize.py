@@ -1212,27 +1212,12 @@ tables = {
                 'customer': {
                     'type': 'select',
                     'text': 'Заказчик',
-                    'width': 6,
+                    'width': 12,
                     'icon': 'fa fa-hashtag',
                     'name': "full_name",
                     'value': "",
                     'subtable': 'customer'
                 },
-                'object': {
-                    'type': 'select',
-                    'text': 'Объект',
-                    'width': 6,
-                    'icon': 'fa fa-hashtag',
-                    'name': "address",
-                    'value': "",
-                    'subtable': 'object',
-                    'filters': [
-                        {
-                            'field': 'customer',
-                            'value': 'customer.id'
-                        }
-                    ]
-                }
             },
         },
     },
@@ -1584,7 +1569,7 @@ tables = {
                 },
                 "estimate": {
                     'type': 'text',
-                    'text': 'Оценка качесва выполнения задачи',
+                    'text': 'Оценка качества выполнения задачи',
                     'width': 6,
                     'icon': 'fa fa-hashtag',
                     'name': "estimate",
@@ -2734,6 +2719,7 @@ desk_config = {
                 'icon': 'mdi-account-hard-hat',
                 'menu': top_menu,
                 'is_active': False,
+                'router': '/newcontract',
                 'color': 'red'
             },
             {
@@ -2753,32 +2739,22 @@ desk_config = {
                 'color': 'blue'
             },
             {
-                'text': 'Работы',
-                'table': tables['protocol'],
-                'icon': 'mdi-home-search-outline',
+                'text': 'Договоры',
+                'icon': 'mdi-handshake',
                 'menu': top_menu,
-                'router': '/',
                 'is_active': False,
+                'router': '/contracts',
                 'color': 'red'
             },
             {
-                'text': 'Протоколы',
-                'table': tables['protocol'],
-                'icon': 'far fa-envelope',
-                'menu': top_menu,
-                'router': '/',
-                'is_active': False,
-                'color': 'red'
-            },
-            {
-                'text': 'Видео',
-                'icon': 'mdi-video-vintage',
+                'text': 'Объекты контроля',
+                'icon': 'mdi-arrow-split-horizontal',
                 'menu': top_menu,
                 'is_active': False,
-                'router': '/video',
+                'router': '/objects',
                 'color': 'red'
             },
         ],
-        'start_page': "Видео"
+        'start_page': "Заявки в работе"
     }
 }

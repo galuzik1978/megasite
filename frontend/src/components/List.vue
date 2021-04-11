@@ -7,6 +7,7 @@
       :calculate-widths=true
       :loading=loading
       loading-text="Загружаем данные ... Пожалуйста, подождите"
+      no-data-text="Записи таблицы не найдены."
       @dblclick:row="editItem"
     >
       <template v-slot:top>
@@ -85,7 +86,6 @@ export default {
     content:{},
     dialog: false,
     update: false,
-    items:[]
   }),
 
   computed: {
@@ -106,18 +106,29 @@ export default {
       return this.$store.state.tables[this.table_name]
     },
 
+    items(){
+      return this.$store.state.current_table
+    },
+
   },
 
   methods: {
 
     addItem(){
-      this.content = this.deepClone(this.table.edit)
+      this.content = this.table.edit
+      //Очищаем value для всех полей таблицы
+      for (let field in this.table.edit.fields){
+        if (this.table.edit.fields[field].type == 'file')
+          this.table.edit.fields[field].value = null
+        else
+          this.table.edit.fields[field].value = ""
+      }
       this.update = false
       this.dialog = true
     },
 
     editItem (event, item) {
-      this.content = this.deepClone(this.table.edit)
+      this.content = this.table.edit
       var tmp
       if (item.item == undefined) {
         tmp = item
@@ -139,40 +150,15 @@ export default {
       this.dialog = false
     },
 
-    deepClone: function (obj) {
-      const clObj = {};
-      for(const i in obj) {
-        if (obj[i] instanceof Object) {
-          clObj[i] = this.deepClone(obj[i]);
-          continue;
-        }
-        clObj[i] = obj[i];
-      }
-      return clObj;
-    },
-
-    table_update(table, content) {
+    table_update() {
       let params = {}
-      if(typeof this.table.filters == "object")
-        this.table.filters.forEach(filter => {
-          params[filter.field] = filter.value
-        });
-      if (typeof content == "undefined") {
-        //Обновляем таблицу при обновлении компонента
-        this.$http
-        .get(this.table_url, {
-            params:params
-          }
-        )
-        .then((response) => {
-          this.items = response.data
-        })
-        this.content = this.deepClone(this.table.edit)
-      } else {
-        this.$store.dispatch('change_data', {'name': table.name})
-        this.content = this.deepClone(content)
-        this.dialog = true 
-      }
+        if(typeof this.table.filters == "object")
+          this.table.filters.forEach(filter => {
+            params[filter.field] = filter.value
+          });
+        this.$store.dispatch('get_current_table', {'url': this.table_url, 'params': params})
+        this.popup_key = this.table_url
+        this.dialog = false
     },
 
   },
@@ -182,19 +168,7 @@ export default {
       immediate: true,
       handler(){
         //Обновляем таблицу при обновлении компонента
-        let params = {}
-        if(typeof this.table.filters == "object")
-          this.table.filters.forEach(filter => {
-            params[filter.field] = filter.value
-          });
-        this.$http
-        .get(this.table_url, {
-          params:params
-        })
-        .then((response) => {
-          this.items = response.data
-        })
-        this.popup_key = this.table_url
+        this.table_update()
       }
     }
   },

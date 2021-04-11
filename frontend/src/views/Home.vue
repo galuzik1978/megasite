@@ -30,51 +30,7 @@
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
-          <v-list-item
-            :key="90"
-            link
-            @click="change_data('undefined', '/contracts')"
-            active-class="active-menu-btn"
-          >
-            <v-list-item-action style="width:24px">
-              <v-icon>mdi-file-question-outline</v-icon>
-            </v-list-item-action>
-            <v-list-item-content class="text-left">
-              <v-list-item-title>
-                Договоры
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            :key="95"
-            link
-            @click="change_data('undefined', '/objects')"
-            active-class="active-menu-btn"
-          >
-            <v-list-item-action style="width:24px">
-              <v-icon>mdi-cube-scan</v-icon>
-            </v-list-item-action>
-            <v-list-item-content class="text-left">
-              <v-list-item-title>
-                Объекты контроля
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
-          <v-list-item
-            :key="100"
-            link
-            @click="change_data('undefined', '/query/0')"
-            active-class="active-menu-btn"
-          >
-            <v-list-item-action style="width:24px">
-              <v-icon>mdi-file-question-outline</v-icon>
-            </v-list-item-action>
-            <v-list-item-content class="text-left">
-              <v-list-item-title>
-                Заполнить заявку
-              </v-list-item-title>
-            </v-list-item-content>
-          </v-list-item>
+  
           <v-list-item
             :key="110"
             link
@@ -125,6 +81,7 @@
       <!-- /Главное меню -->
     </v-navigation-drawer>
 
+    <!-- Верхняя панель сайта -->
     <v-app-bar 
       :clipped-left="$vuetify.breakpoint.lgAndUp"
       app
@@ -198,7 +155,7 @@
     data: () => ({
         drawer: false,
         table_name: '',
-        selectedItem: 0
+        selectedItem: 3
     }),
 
     computed: {
@@ -239,6 +196,10 @@
         }
       },
 
+    },
+
+    mounted(){
+      this.selectedItem = this.$store.state.start_page
     },
 
     beforeMount() { document.title = this.title },

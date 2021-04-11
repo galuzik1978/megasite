@@ -18,9 +18,12 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 
+from project_root.views import MainPageView
 
 urlpatterns = [
     path('', include('api.urls')),
     path('admin/', admin.site.urls),
+    path('main/', MainPageView.as_view())
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) +\
-              static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) +\
+    static("/", document_root='../frontend/dist/')

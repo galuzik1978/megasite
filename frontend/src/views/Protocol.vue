@@ -40,20 +40,19 @@
               <!-- Слот выбора результатов контроля -->
               <template v-slot:item.customize="{ item, header }">
                 <v-select
-                  v-model="item[header.column]"
+                  v-model="item[header.data]"
                   v-if="header.type==3"
                   :items="header.selectchoices"
                 ></v-select>
-              </template>
-
-              <!-- Слоты для ввода результатов измерения сопротивления изоляции -->
-              <template v-slot:item.AB>
-                <v-text-field ></v-text-field>
+                <v-text-field
+                  v-model="item[header.data]"
+                  v-else
+                ></v-text-field>
               </template>
 
               <!-- Слот раскрывающейся строки для отображения выявленных несоответствий -->
               <template v-slot:expanded-item="{ header, item }">
-                <td :colspan=5>
+                <td :colspan=form.header.length>
                   <v-card-title class="text-center" style="display:block;">
                     Выявленные дефекты
                   </v-card-title>

@@ -69,7 +69,7 @@ export default {
     },
 
     EditItem (item) {
-      this.edit = this.deepClone(this.table.edit)
+      this.edit = this.table.edit
       if (typeof item == "number"){
         this.edit.fields.id.value = item
       } else {
@@ -88,18 +88,6 @@ export default {
       }
       this.update = true
       this.dialog = true
-    },
-
-    deepClone: function (obj) {
-      const clObj = {};
-      for(const i in obj) {
-        if (obj[i] instanceof Object) {
-          clObj[i] = this.deepClone(obj[i]);
-          continue;
-        }
-        clObj[i] = obj[i];
-      }
-      return clObj;
     },
 
     close () {

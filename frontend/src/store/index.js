@@ -22,6 +22,7 @@ export default new Vuex.Store({
     tables: localStorage.getItem('tables') === "undefined" ? 
       "" : JSON.parse(localStorage.getItem('tables')),
     table_name: localStorage.getItem('table_name'),
+    start_page: Number(localStorage.getItem('start_page')),
     current_table: [],
     users: [],
     protocols: [],
@@ -44,6 +45,7 @@ export default new Vuex.Store({
       state.title = data.title
       state.tables = data.tables
       state.table_name = data.table_name
+      state.start_page = data.start_page
     },
 
     auth_error(state){
@@ -58,10 +60,11 @@ export default new Vuex.Store({
     },
     
     get_table_data(state){
+      state.current_table = []
       state.status = 'request_table_data'
     },
 
-    table_data_recieved(state, {table}){
+    table_data_recieved(state, table){
       state.current_table = table
       state.status = 'table_data_recieved'
     },
@@ -106,8 +109,15 @@ export default new Vuex.Store({
           const role = resp.data.role
           const title = resp.data.title
           const tables = resp.data.tables
-          let keys = Object.keys(tables)
-          const table_name = keys[0]
+          let start_page
+
+          desktop.forEach((element, index) => {
+            if (element.text == resp.data.start_page) {
+              start_page = index
+            }
+          });
+
+          const table_name = desktop[start_page].table.name
 
           localStorage.setItem('token', token)
           localStorage.setItem('user', user)
@@ -118,6 +128,7 @@ export default new Vuex.Store({
           localStorage.setItem('title', title)
           localStorage.setItem('tables', JSON.stringify(tables))
           localStorage.setItem('table_name', table_name)
+          localStorage.setItem('start_page', start_page)
           commit('auth_success', {
             'user': user,
             'token': token,
@@ -127,7 +138,8 @@ export default new Vuex.Store({
             'role': role,
             'title': title,
             'tables': tables,
-            'table_name': table_name
+            'table_name': table_name,
+            'start_page': start_page
           })
           axios.defaults.headers.common = {
             Authorization: 'Token ' + token,
@@ -158,13 +170,12 @@ export default new Vuex.Store({
       })
     },
 
-    get_current_table({commit}, url){
+    get_current_table({commit}, payload){
       return new Promise((resolve, reject) => {
         commit('get_table_data')
-        axios({url: url, method: 'GET'})
+        axios.get(payload.url, {params:payload.params})
         .then(resp => {
-          const table = resp.data
-          commit('table_data_recieved', table)
+          commit('table_data_recieved', resp.data)
           resolve(resp)
         })
         .catch(err => {
@@ -222,7 +233,7 @@ export default new Vuex.Store({
     change_data({commit}, payload){
       commit('change_data', {"name": payload.name})
     },
-
+    
     async addProtocol({commit}, protocol){
       commit('item_saved')
       await api.saveProtocol(protocol)

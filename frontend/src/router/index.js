@@ -4,13 +4,13 @@ import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import List from '../components/List.vue'
-import Video from '../components/Video.vue'
 import Query from '../views/Query.vue'
 import Objects from "../views/Objects.vue"
 import Inspection from '../views/Inspection.vue'
 import CreateForm from '../views/CreateForm.vue'
 import Protocol from '../views/Protocol.vue'
 import Contracts from '../views/Contracts.vue'
+import NewContract from "../views/NewContract.vue";
 
 Vue.use(VueRouter)
 
@@ -36,11 +36,6 @@ function dynamicPropsFn (route) {
         props: true
       },
       {
-        path:'video',
-        name: 'Video',
-        component: Video
-      },
-      {
         path:'query/:id',
         name: 'Query',
         component: Query,
@@ -61,6 +56,11 @@ function dynamicPropsFn (route) {
         path: 'createform',
         name: 'CreateForm',
         component: CreateForm
+      },
+      {
+        path: 'newcontract',
+        name: 'NewContract',
+        component: NewContract
       },
       {
         path: 'protocol/:id',

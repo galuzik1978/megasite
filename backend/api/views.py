@@ -472,7 +472,8 @@ class CustomApiLoginView(ObtainAuthToken):
             'tables': customize.tables,
             'title': customize.TITLE,
             'logo': customize.LOGO,
-            'company': customize.COMPANY
+            'company': customize.COMPANY,
+            'start_page': customize.desk_config['manager']['start_page']
         })
 
 
