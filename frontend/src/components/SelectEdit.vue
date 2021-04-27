@@ -3,7 +3,8 @@
   <v-select 
     :items='items'
     v-model="row[index]"
-    :item-text="item_text"
+    item-text="val"
+    item-value="id"
   >
     <template v-slot:append-outer>
       <v-icon @click="dialog=true">

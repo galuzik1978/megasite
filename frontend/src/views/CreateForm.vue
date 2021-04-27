@@ -54,6 +54,7 @@
               >
                 <v-text-field
                   label="Введите наименование таблицы"
+                  v-model="data.tables[0].name"
                 >
                 </v-text-field>
               </v-col>
@@ -64,23 +65,52 @@
             <v-card-text>
               <custom_table
                 :headers="table_headers"
-                :items="table_items"
+                :items="data.tables[0].header"
               >
               </custom_table>
-              <v-btn color="warning" @click="addCol({headers:table_headers, items:table_items})">Добавить столбец таблицы</v-btn>
+              <v-btn color="warning" @click="addCol({headers:table_headers, items:data.tables[0].header})">Добавить столбец таблицы</v-btn>
             </v-card-text>
             <v-card-subtitle>
               Содержимое таблицы
             </v-card-subtitle>
             <v-card-text>
               <custom_table
-                :headers="table_items"
-                :items="items"
+                :headers="data.tables[0].header"
+                :items="data.tables[0].dataset"
                 :creating=true
               >
               </custom_table>
-              <v-btn color="warning" @click="addCol({headers:table_items, items:items})">Добавить строку таблицы</v-btn>
+              <v-btn color="warning" @click="addRow({headers:table_items, items:data.tables[0].dataset})">Добавить строку таблицы</v-btn>
             </v-card-text>
+            <v-card-subtitle>
+              Данные для выпадающих списков
+            </v-card-subtitle>
+            <v-card-text
+              v-for="(col, index) in data.tables[0].header"
+              :key='"select" + index'
+            >
+              <div
+                v-if="col.type=='3'"
+              >
+                <custom_table
+                  :headers="select_header"
+                  :items="col.selectchoices"
+                  :creating=true
+                  
+                >
+                </custom_table>
+                <v-btn color="warning" @click="addSelect({headers:select_header, items:col.selectchoices}); data=data">Добавить строку таблицы</v-btn>
+              </div>
+            </v-card-text>
+            <v-card>
+              <v-card-subtitle>Пример отображения таблицы в протоколе</v-card-subtitle>
+              <protocolTable
+                :tables=data.tables
+                :annex_table=data.annex_table
+                :images=images
+                :data=data
+              ></protocolTable>
+            </v-card>
           </v-card>
         </v-tab-item>
         <v-tab-item>
@@ -141,14 +171,61 @@
 <script>
 import custom_table from '../components/CustomTable'
 import create_form from '../components/CreateForm'
+import protocolTable from '../components/ProtocolTable'
 export default {
 
   components:{
     custom_table,
-    create_form
+    create_form,
+    protocolTable,
   },
 
   data:() => ({
+    
+    data: {
+      object:{
+        reg_num: 'Регистрационный номер',
+        form:{
+          name: ''
+        }
+      },
+      tables:[
+        {
+          header:[],
+          expanded:[],
+          collapse:true,
+          annex_table:[],
+          dataset:[],
+        }
+      ],
+      annex_table:[],
+    },
+    annex_table:[],
+    images:[],
+
+    select_header:[
+      {
+          text: '№ п/п',
+          align: 'start',
+          sortable: false,
+          value: 'num',
+          width: '5%',
+          type: 'rows_num',
+      },
+      {
+          text: 'text',
+          align: 'start',
+          sortable: false,
+          value: 'text',
+      },
+      {
+          text: 'value',
+          align: 'start',
+          sortable: false,
+          value: 'value',
+      },
+    ],
+
     tab: null,
     item: [],
     current_table_headers_item:[],
@@ -234,6 +311,13 @@ export default {
           editable: true,
         },
         {
+          text: 'data',
+          align: 'start',
+          sortable: false,
+          value: 'data',
+          editable: true
+        },
+        {
           text: 'sortable',
           align: 'start',
           sortable: false,
@@ -256,10 +340,20 @@ export default {
           value: 'align',
           type: 'select',
           select_items:[
-            'none',
-            'start',
-            'center',
-            'end'
+            {
+              id:'1',
+              val:'none'
+            },
+            {
+              id:'2',
+              val:'start'},
+            {
+              id:'3',
+              val:'center'},
+            {
+              id:'4',
+              val:'end'
+            }
           ],
           editable: true
         },
@@ -279,11 +373,26 @@ export default {
           value: 'type',
           type: 'select',
           select_items:[
-            'none',
-            'bool',
-            'select',
-            'actions',
-            'rows_num',
+            {
+              id:'1',
+              val:'none'
+            },
+            {
+              id:'2',
+              val:'bool'
+            },
+            {
+              id:'3',
+              val:'select'
+            },
+            {
+              id:'4',
+              val:'actions'
+            },
+            {
+              id:'5',
+              val:'rows_num'
+            },
           ],
           editable: true
         },
@@ -294,9 +403,18 @@ export default {
           value: 'width',
           type: 'select',
           select_items:[
-            'none',
-            'del',
-            'add',
+            {
+              id:'1',
+              val:'none'
+            },
+            {
+              id:'2',
+              val:'del'
+            },
+            {
+              id:'3',
+              val:'add'
+            },
           ],
           editable: true
         },
@@ -401,19 +519,32 @@ export default {
       for (let item of table.headers){
         row[item.value] = null
       }
-      row.select_items = []
+      row.selectchoices = []
       table.items.push(
         row
       )
     },
 
-    addRow(row, table){
-      let tmp = []
-      for (let i in row){
-        tmp[i] = row[i]
+    addRow(table){
+      let row = {annex_table:[]}
+      for (let item of table.headers){
+        row[item.value] = null
       }
-      table.push(tmp)
-      console.log(this.all_documents)
+      row.selectchoices = []
+      table.items.push(
+        row
+      )
+    },
+    
+    addSelect(table){
+      let row = []
+      for (let item of table.headers){
+        row[item.value] = null
+      }
+      row.selectchoices = []
+      table.items.push(
+        row
+      )
     }
 
   },

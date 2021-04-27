@@ -21,7 +21,6 @@
                 :items="'select_items' in sell ? sell.select_items : (sell = Object.assign({}, sell, { select_items: [] }))['select_items']"
                 :row="row"
                 :index="sell.value"
-                :item_text="item_text"
               ></select_edit>
             </template>
             <v-checkbox
