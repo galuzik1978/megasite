@@ -15,6 +15,12 @@
           <template v-if='sell.type=="rows_num"'>
             {{ i+1 }}
           </template>
+          <template
+            v-else-if='sell.type=="sorting"'
+          >
+            <v-btn small @click="$emit('up', i)"><v-icon>mdi-arrow-up-drop-circle</v-icon></v-btn>
+            <v-btn small @click="$emit('down', i)"><v-icon>mdi-arrow-down-drop-circle</v-icon></v-btn>
+          </template>
           <template v-else-if='sell.editable^creating'>
             <template v-if='sell.type=="select"'>
               <select_edit

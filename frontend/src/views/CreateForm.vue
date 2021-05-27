@@ -66,6 +66,8 @@
               <custom_table
                 :headers="table_headers"
                 :items="data.tables[0].header"
+                @up="sorting_up($event)"
+                @down="sorting_down($event)"
               >
               </custom_table>
               <v-btn color="warning" @click="addCol({headers:table_headers, items:data.tables[0].header})">Добавить столбец таблицы</v-btn>
@@ -418,6 +420,10 @@ export default {
           ],
           editable: true
         },
+        {
+          text: 'sorting',
+          type: 'sorting'
+        }
       ],
     table_items:[],
    
@@ -545,6 +551,18 @@ export default {
       table.items.push(
         row
       )
+    },
+
+    sorting_up(event, data){
+      console.log('up')
+      console.log(event)
+      console.log(data)
+    },
+
+    sorting_down(event, data){
+      console.log('down')
+      console.log(event)
+      console.log(data)
     }
 
   },

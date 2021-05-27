@@ -63,6 +63,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'rest_framework.authtoken',
+    'develop.apps.DevelopConfig',
     'user_profile.apps.UserProfileConfig',
     'organisation.apps.OrganisationConfig',
     'postoffice.apps.PostofficeConfig',
