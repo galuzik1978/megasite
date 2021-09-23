@@ -68,6 +68,7 @@
                 :items="data.tables[0].header"
                 @up="sorting_up($event)"
                 @down="sorting_down($event)"
+                @delete="sorting_delete($event)"
               >
               </custom_table>
               <v-btn color="warning" @click="addCol({headers:table_headers, items:data.tables[0].header})">Добавить столбец таблицы</v-btn>
@@ -77,9 +78,11 @@
             </v-card-subtitle>
             <v-card-text>
               <custom_table
-                :headers="data.tables[0].header"
+                :headers="data.tables[0].header.concat([{text: 'sorting', type: 'sorting'}])"
                 :items="data.tables[0].dataset"
                 :creating=true
+                @up="sorting_up($event)"
+                @down="sorting_down($event)"
               >
               </custom_table>
               <v-btn color="warning" @click="addRow({headers:table_items, items:data.tables[0].dataset})">Добавить строку таблицы</v-btn>
@@ -94,6 +97,9 @@
               <div
                 v-if="col.type=='3'"
               >
+                <v-card-subtitle>
+                  {{ col.text }}
+                </v-card-subtitle>
                 <custom_table
                   :headers="select_header"
                   :items="col.selectchoices"
@@ -553,16 +559,28 @@ export default {
       )
     },
 
-    sorting_up(event, data){
-      console.log('up')
-      console.log(event)
-      console.log(data)
+    sorting_up(event){
+      if (event.i > 0){
+        [event.items[event.i-1], event.items[event.i]] = [event.items[event.i], event.items[event.i-1]]
+        console.log('up')
+        console.log(event)
+        event.items.splice()
+      }
     },
 
-    sorting_down(event, data){
-      console.log('down')
+    sorting_down(event){
+      if (event.i < (event.items.length - 1)){
+        [event.items[event.i+1], event.items[event.i]] = [event.items[event.i], event.items[event.i+1]]
+        console.log('down')
+        console.log(event)
+        event.items.splice()
+      }
+    },
+
+    sorting_delete(event){
+      console.log('delete')
       console.log(event)
-      console.log(data)
+      event.items.splice(event.i, 1)
     }
 
   },
