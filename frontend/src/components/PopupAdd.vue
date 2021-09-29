@@ -19,7 +19,7 @@
                 <ApiSelect 
                   v-if="field.type=='select'"
                   :field=fields[index] 
-                  :key=fields[index].value.id
+                  
                   :value=fields[index].value
                   :table=get_subtable(fields[index].subtable)
                   @input="changeSelect(field, $event)"

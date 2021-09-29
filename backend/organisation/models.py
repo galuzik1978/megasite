@@ -274,6 +274,7 @@ class Header(models.Model):
     ]
     table = models.ForeignKey(Table, on_delete=models.PROTECT)
     text = models.CharField(max_length=255, verbose_name="Наименование столбца", blank=True, null=True)
+    order = models.IntegerField(verbose_name="Положение столбца в таблице", blank=True, null=True)
     align = models.SmallIntegerField(choices=ALIGN_CHOICES, blank=True, null=True)
     type = models.SmallIntegerField(choices=FIELD_TYPES, blank=True, null=True)
     sortable = models.BooleanField(blank=True, null=True)
@@ -304,6 +305,7 @@ class Sell(models.Model):
     row = models.ForeignKey(Row, on_delete=models.PROTECT)
     text = models.CharField(max_length=255, verbose_name="Неизменное содержимое ячейки", blank=True, null=True)
     value = models.CharField(max_length=255, null=True)
+    col = models.ForeignKey(Header, on_delete=models.PROTECT, null=True)
 
     def __str__(self):
         return "{} из таб. {}".format(

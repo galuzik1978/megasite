@@ -39,6 +39,8 @@ router.register(r'accuracy', views.AccuracyClassApiView)
 router.register(r'object', views.ObjectApiView)
 router.register(r'protocol', views.ProtocolApiView)
 router.register(r'device', views.DeviceApiView)
+router.register(r'form', views.FormApiView)
+router.register(r'table', views.TableApiView)
 
 # app_name = 'restapi'
 urlpatterns = [

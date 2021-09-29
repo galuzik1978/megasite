@@ -20,11 +20,12 @@ from api.serializers import InboxSer, SenderSer, ProfileSer, RoleSer, CustomerSe
     StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer, \
     ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
-    ProtocolAnnexSer, RulesSer, hint_address, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer
+    ProtocolAnnexSer, RulesSer, hint_address, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer, FormSer, \
+    TableSer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, Table, Row, SellValue, \
-    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document
+    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document, Header
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
@@ -748,3 +749,81 @@ class FileFieldTestView(APIView):
                 files.append({'file':inbox.annex})
         res = FileFieldTestSer(files, many=True)
         return Response(res.data)
+
+
+class TableApiView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+    queryset = Table.objects.all()
+    serializer_class = TableSer
+
+    def list(self, request, *args, **kwargs):
+        tables = Table.objects.all()
+        response = []
+        for i, table in enumerate(tables):
+            response.append({
+                'id': table.id,
+                'name': table.name,
+                'header': []
+            })
+            headers = table.header_set.all().order_by('id')
+            for header in headers:
+                select_choices = header.selectchoices_set.all()
+                choices = []
+                for select_choice in select_choices:
+                    choices.append({
+                        'id': select_choice.id,
+                        'text': select_choice.text,
+                        'value': select_choice.value
+                    })
+                response[i]['header'].append({
+                    'id': header.id,
+                    'order': header.order,
+                    'text': header.text,
+                    'align': header.align,
+                    'type': header.type,
+                    'sortable': header.sortable,
+                    'value': header.value,
+                    'width': header.width,
+                    'editable': header.editable,
+                    'data': header.data,
+                    'choices': choices,
+                })
+            rows = table.row_set.all().order_by('id')
+            dataset = []
+            data = dict({})
+            for k, row in enumerate(rows):
+                sells = row.sell_set.all().order_by('id')
+                for sell in sells:
+                    data[sell.value] = sell.text
+                data['id'] = sell.id
+                data['num'] = k
+                dataset.append(dict(data))
+            response[i]['dataset'] = list(dataset)
+        return Response(TableSer(response, many=True).data)
+
+
+class FormApiView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+    queryset = Form.objects.all()
+    serializer_class = FormSer
+
+    def list(self, request, *args, **kwargs):
+        forms = Form.objects.all()
+        response = []
+        for i, form in enumerate(forms):
+            response.append({'id': form.id, 'name': form.name})
+            tables = form.table_set.all()
+            #response[i]['id'] = []
+            id = []
+            for table in tables:
+                id.append(table.id)
+            response[i]['tables'] = id
+        return Response(FormSer(response, many=True).data)
+
+    def create(self, request, *args, **kwargs):
+        return super(FormApiView, self).create(request, *args, **kwargs)
+    
+    def retrieve(self, request, *args, **kwargs):
+        return super(FormApiView, self).retrieve(request, *args, **kwargs)

@@ -8,7 +8,8 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
-    TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device
+    TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, \
+    Table
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus, WorkRequest, \
     ObjRequest
@@ -821,3 +822,26 @@ class FullProtocolSer(serializers.Serializer):
 
 class FileFieldTestSer(serializers.Serializer):
     file = serializers.FileField()
+
+
+class TableSer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    header = serializers.ListField()
+    dataset = serializers.ListField()
+
+
+class FormSer(serializers.Serializer):
+    id = serializers.IntegerField(required=False)
+    name = serializers.CharField()
+    tables = serializers.ListField(required=False)
+
+    def create(self, validated_data):
+        if 'id' in validated_data:
+            form = Form.objects.get(id=validated_data['id'])
+        else:
+            form = Form.objects.create(name=validated_data['name'])
+        for table in validated_data['tables']:
+            t = Table.objects.get(id=table['id'])
+            form.table_set.add(t)
+        return form

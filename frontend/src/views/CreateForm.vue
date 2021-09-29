@@ -15,32 +15,32 @@
           <v-icon left>
             mdi-playlist-plus
           </v-icon>
-          Скомпоновать форму
+          Формы
         </v-tab>
         <v-tab>
           <v-icon left>
             mdi-table-arrow-down
           </v-icon>
-          Создать таблицу
+          Таблицы
         </v-tab>
         <v-tab>
           <v-icon left>
            mdi-clipboard-edit-outline
           </v-icon>
-          Управление дефектами
+          Дефекты
         </v-tab>
 
         <v-tab>
           <v-icon left>
            mdi-clipboard-edit-outline
           </v-icon>
-          Управление документами
+          Документы
         </v-tab>
 
         <v-tab-item>
           <create_form
-            :form=all_forms[form_index]
-            :tables=all_tables
+            :form=all_forms
+            :tables=tables
           ></create_form>
         </v-tab-item>
         <v-tab-item>
@@ -587,6 +587,24 @@ export default {
 
   created(){
     this.reasons_header[2].select_items = this.all_documents
+  },
+
+  mounted(){
+    let v = this
+    this.$http
+    .get("api/form/", {params: this.$attrs})
+    .then((response) => {
+      v.all_forms = response.data
+    })
+    this.$http
+    .get("api/table/", {params: this.$attrs})
+    .then((response) => {
+      v.all_tables = response.data
+      v.tables = []
+      for (let table of v.all_tables){
+        v.tables.push({id:table.id, name:table.name})
+      }
+    })
   },
 
 }

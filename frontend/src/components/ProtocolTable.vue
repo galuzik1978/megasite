@@ -35,6 +35,10 @@
               v-if="header.type==3"
               :items="header.selectchoices"
             ></v-select>
+            <v-checkbox
+              v-model="item[header.data]"
+              v-else-if="header.type==2"
+            ></v-checkbox>
             <v-text-field
               v-model="item[header.data]"
               v-else
