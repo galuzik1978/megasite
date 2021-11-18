@@ -293,6 +293,7 @@ class Header(models.Model):
 class Row(models.Model):
     table = models.ForeignKey(Table, on_delete=models.PROTECT)
     name = models.CharField(max_length=255, verbose_name="Наименование строки")
+    order = models.IntegerField(verbose_name='Порядок строки в таблице', null=True)
 
     def __str__(self):
         return "{} из таб. {}".format(

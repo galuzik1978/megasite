@@ -44,82 +44,10 @@
           ></create_form>
         </v-tab-item>
         <v-tab-item>
-          <v-card flat>
-            <v-card-title class="text-center justify-center">
-              Сформируйте все столбцы и строки таблицы контроля
-            </v-card-title>
-            <v-row justify='center'>
-              <v-col
-                cols=6
-              >
-                <v-text-field
-                  label="Введите наименование таблицы"
-                  v-model="data.tables[0].name"
-                >
-                </v-text-field>
-              </v-col>
-            </v-row>
-            <v-card-subtitle>
-              Заголовок таблицы
-            </v-card-subtitle>
-            <v-card-text>
-              <custom_table
-                :headers="table_headers"
-                :items="data.tables[0].header"
-                @up="sorting_up($event)"
-                @down="sorting_down($event)"
-                @delete="sorting_delete($event)"
-              >
-              </custom_table>
-              <v-btn color="warning" @click="addCol({headers:table_headers, items:data.tables[0].header})">Добавить столбец таблицы</v-btn>
-            </v-card-text>
-            <v-card-subtitle>
-              Содержимое таблицы
-            </v-card-subtitle>
-            <v-card-text>
-              <custom_table
-                :headers="data.tables[0].header.concat([{text: 'sorting', type: 'sorting'}])"
-                :items="data.tables[0].dataset"
-                :creating=true
-                @up="sorting_up($event)"
-                @down="sorting_down($event)"
-              >
-              </custom_table>
-              <v-btn color="warning" @click="addRow({headers:table_items, items:data.tables[0].dataset})">Добавить строку таблицы</v-btn>
-            </v-card-text>
-            <v-card-subtitle>
-              Данные для выпадающих списков
-            </v-card-subtitle>
-            <v-card-text
-              v-for="(col, index) in data.tables[0].header"
-              :key='"select" + index'
-            >
-              <div
-                v-if="col.type=='3'"
-              >
-                <v-card-subtitle>
-                  {{ col.text }}
-                </v-card-subtitle>
-                <custom_table
-                  :headers="select_header"
-                  :items="col.selectchoices"
-                  :creating=true
-                  
-                >
-                </custom_table>
-                <v-btn color="warning" @click="addSelect({headers:select_header, items:col.selectchoices}); data=data">Добавить строку таблицы</v-btn>
-              </div>
-            </v-card-text>
-            <v-card>
-              <v-card-subtitle>Пример отображения таблицы в протоколе</v-card-subtitle>
-              <protocolTable
-                :tables=data.tables
-                :annex_table=data.annex_table
-                :images=images
-                :data=data
-              ></protocolTable>
-            </v-card>
-          </v-card>
+          <create_table
+            :data=data
+            :tables=all_tables
+          ></create_table>          
         </v-tab-item>
         <v-tab-item>
           <v-card flat>
@@ -179,13 +107,13 @@
 <script>
 import custom_table from '../components/CustomTable'
 import create_form from '../components/CreateForm'
-import protocolTable from '../components/ProtocolTable'
+import create_table from '../components/CreateTable'
 export default {
 
   components:{
     custom_table,
     create_form,
-    protocolTable,
+    create_table
   },
 
   data:() => ({
@@ -294,144 +222,6 @@ export default {
       point:"",
       phrasing:""
     },
-
-    table_headers:[
-        {
-          text: '№ п/п',
-          align: 'start',
-          sortable: false,
-          value: 'num',
-          width: '5%',
-          type: 'rows_num',
-        },
-        {
-          text: 'text',
-          align: 'start',
-          sortable: false,
-          value: 'text',
-          editable: true
-        },
-        {
-          text: 'value',
-          align: 'start',
-          sortable: false,
-          value: 'value',
-          editable: true,
-        },
-        {
-          text: 'data',
-          align: 'start',
-          sortable: false,
-          value: 'data',
-          editable: true
-        },
-        {
-          text: 'sortable',
-          align: 'start',
-          sortable: false,
-          value: 'sortable',
-          type: 'bool',
-          editable: true
-        },
-        {
-          text: 'editable',
-          align: 'start',
-          sortable: false,
-          value: 'editable',
-          type: 'bool',
-          editable: true
-        },
-        {
-          text: 'align',
-          align: 'start',
-          sortable: false,
-          value: 'align',
-          type: 'select',
-          select_items:[
-            {
-              id:'1',
-              val:'none'
-            },
-            {
-              id:'2',
-              val:'start'},
-            {
-              id:'3',
-              val:'center'},
-            {
-              id:'4',
-              val:'end'
-            }
-          ],
-          editable: true
-        },
-        {
-          text: 'width',
-          align: 'start',
-          sortable: false,
-          value: 'width',
-          editable: true,
-          type: 'number',
-          range: [0,100,3]
-        },
-        {
-          text: 'type',
-          align: 'start',
-          sortable: false,
-          value: 'type',
-          type: 'select',
-          select_items:[
-            {
-              id:'1',
-              val:'none'
-            },
-            {
-              id:'2',
-              val:'bool'
-            },
-            {
-              id:'3',
-              val:'select'
-            },
-            {
-              id:'4',
-              val:'actions'
-            },
-            {
-              id:'5',
-              val:'rows_num'
-            },
-          ],
-          editable: true
-        },
-        {
-          text: 'action',
-          align: 'start',
-          sortable: false,
-          value: 'width',
-          type: 'select',
-          select_items:[
-            {
-              id:'1',
-              val:'none'
-            },
-            {
-              id:'2',
-              val:'del'
-            },
-            {
-              id:'3',
-              val:'add'
-            },
-          ],
-          editable: true
-        },
-        {
-          text: 'sorting',
-          type: 'sorting'
-        }
-      ],
-    table_items:[],
    
     items:[],
     tables:[

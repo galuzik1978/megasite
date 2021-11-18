@@ -21,11 +21,11 @@ from api.serializers import InboxSer, SenderSer, ProfileSer, RoleSer, CustomerSe
     ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
     ProtocolAnnexSer, RulesSer, hint_address, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer, FormSer, \
-    TableSer
+    TableSer, TableSerializer, FormSerializer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, Table, Row, SellValue, \
-    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document, Header
+    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document, Header, Sell
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
@@ -755,75 +755,98 @@ class TableApiView(viewsets.ModelViewSet):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.AllowAny]
     queryset = Table.objects.all()
-    serializer_class = TableSer
+    serializer_class = TableSerializer
+     
+    def create(self, request, *args, **kwargs):
+        try:
+            table = Table.objects.get(pk=request.data['id'])
+            table.name = request.data['name']
+            table.save()
+        except Table.DoesNotExist:
+            table = Table.objects.create(
+                name = request.data['name']
+            )
+        # Удаляем заголовки из базы данных, отсутствующие в принятом массиве
+        headers = Header.objects.filter(table=table)
+        ids = [h['id'] for h in request.data['header']]
+        for header in headers:
+            if header.id not in ids:
+                header.delete()
 
-    def list(self, request, *args, **kwargs):
-        tables = Table.objects.all()
-        response = []
-        for i, table in enumerate(tables):
-            response.append({
-                'id': table.id,
-                'name': table.name,
-                'header': []
-            })
-            headers = table.header_set.all().order_by('id')
-            for header in headers:
-                select_choices = header.selectchoices_set.all()
-                choices = []
-                for select_choice in select_choices:
-                    choices.append({
-                        'id': select_choice.id,
-                        'text': select_choice.text,
-                        'value': select_choice.value
-                    })
-                response[i]['header'].append({
-                    'id': header.id,
-                    'order': header.order,
-                    'text': header.text,
-                    'align': header.align,
-                    'type': header.type,
-                    'sortable': header.sortable,
-                    'value': header.value,
-                    'width': header.width,
-                    'editable': header.editable,
-                    'data': header.data,
-                    'choices': choices,
-                })
-            rows = table.row_set.all().order_by('id')
-            dataset = []
-            data = dict({})
-            for k, row in enumerate(rows):
-                sells = row.sell_set.all().order_by('id')
+        for header in request.data['header']:
+            try:
+                h = Header.objects.get(pk=header['id'])
+                h.table = table
+                h.text = header['text']
+                h.order = header['order']
+                h.align = header['align']
+                h.type = header['type']
+                h.sortable = header['sortable']
+                h.value = header['value']
+                h.width = header['width']
+                h.editable = header['editable']
+                h.data = header['data']
+                h.save()
+            except Header.DoesNotExist:
+                h = Header.objects.create(
+                    table=table,
+                    text=header['text'],
+                    order=header['order'],
+                    align=header['align'],
+                    type=header['type'],
+                    sortable=header['sortable'],
+                    value=header['value'],
+                    width=header['width'],
+                    editable=header['editable'],
+                    data=header['data']
+                )
+        # Удаляем ряды, отсутствующие в принятых данных
+        rows = Row.objects.filter(table=table)
+        ids = [row['row_id'] for row in request.data['dataset']]
+        for row in rows:
+            if row.id not in ids:
+                sells = Sell.objects.filter(row=r)
                 for sell in sells:
-                    data[sell.value] = sell.text
-                data['id'] = sell.id
-                data['num'] = k
-                dataset.append(dict(data))
-            response[i]['dataset'] = list(dataset)
-        return Response(TableSer(response, many=True).data)
+                    sell.delete()
+                row.delete()
+
+        for row in request.data['dataset']:
+            try:
+                r = Row.objects.get(pk=row['row_id'])
+                r.table = table
+                r.order = row['row_order']
+                r.name = row['name']
+                r.save()
+            except Row.DoesNotExist:
+                r = Row.objects.create(
+                    table=table,
+                    order=row['row_order'],
+                    name=row['name']
+                )
+            row_sells = Sell.objects.filter(row=r)
+            for col in row:
+                try:
+                    s = row_sells.get(value=col)
+                    s.row = r
+                    s.text = row[col]
+                    s.value = col
+                    s.save()
+                except Sell.DoesNotExist:
+                    s = Sell.objects.create(
+                        row=r,
+                        text=row[col],
+                        value=col
+                    )
+        response_status = status.HTTP_200_OK
+        return Response("Все океюшки", status=response_status)
+    
+    def update(self, request, *args, **kwargs):
+        return super(TableApiView, self).update(request, *args, **kwargs)
 
 
 class FormApiView(viewsets.ModelViewSet):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.AllowAny]
     queryset = Form.objects.all()
-    serializer_class = FormSer
+    serializer_class = FormSerializer
 
-    def list(self, request, *args, **kwargs):
-        forms = Form.objects.all()
-        response = []
-        for i, form in enumerate(forms):
-            response.append({'id': form.id, 'name': form.name})
-            tables = form.table_set.all()
-            #response[i]['id'] = []
-            id = []
-            for table in tables:
-                id.append(table.id)
-            response[i]['tables'] = id
-        return Response(FormSer(response, many=True).data)
-
-    def create(self, request, *args, **kwargs):
-        return super(FormApiView, self).create(request, *args, **kwargs)
-    
-    def retrieve(self, request, *args, **kwargs):
-        return super(FormApiView, self).retrieve(request, *args, **kwargs)

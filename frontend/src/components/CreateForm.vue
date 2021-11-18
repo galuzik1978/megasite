@@ -160,7 +160,7 @@ export default {
       let table
       if (event >= 0) {
         for (tables_id of this.form[event].tables){
-          table = this.tables.find(table => table.id === tables_id)
+          table = this.tables.find(table => table.id === tables_id.id)
           this.form_tables.push(table)
           this.selectedForm = event
           this.name = this.form[event].name
@@ -168,9 +168,6 @@ export default {
       } else {
         this.name = ""
       }
-      console.log(this.tables)
-      console.log(table)
-      console.log(this.form_tables)
     }
   },
 

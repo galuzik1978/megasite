@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, \
-    Table
+    Table, Header, Row, Sell
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus, WorkRequest, \
     ObjRequest
@@ -18,6 +18,13 @@ from util.customize import Company_INN, Company_Phone
 
 token = 'e01d0b0411274cc94fd22aa9c2bf5bf5d9f14936' # "Replace with Dadata API key"
 secret = '29a8f7d7d8528121a4ecdeddc9796dc68d1c40f5' # "Replace with Dadata secret key"
+
+
+def header_sort(data):
+    return data['order']
+
+def row_sort(data):
+    return data['row_order']
 
 
 class TypeCustomerSer(serializers.ModelSerializer):
@@ -845,3 +852,86 @@ class FormSer(serializers.Serializer):
             t = Table.objects.get(id=table['id'])
             form.table_set.add(t)
         return form
+
+
+class HeaderSerializer(serializers.ModelSerializer):
+    selectchoices = SelectChoicesSer(source='selectchoices_set', many=True)
+
+    class Meta:
+        model = Header
+        fields = [
+            'id',
+            'table',
+            'text',
+            'order',
+            'align',
+            'type',
+            'sortable',
+            'value',
+            'width',
+            'editable',
+            'data',
+            'selectchoices'
+        ]
+        queryset = Header.objects.order_by('order')
+
+
+class SellSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Sell
+        fields = '__all__'
+
+
+class RowSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Row
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        sells = instance.sell_set.all()
+        data = {'row_id': instance.id, 'row_order': instance.order, 'annex_table': []}
+        for d in list(SellSerializer(sells, many=True).data):
+            data[d['value']] = d['text']
+        return data
+
+
+class TableSerializer(serializers.ModelSerializer):
+    header = HeaderSerializer(many=True, source='header_set')
+    dataset = RowSerializer(source='row_set', many=True)
+    annex_table = AnnexSer(source='protocolannex_set', many=True)
+    defectheaders = serializers.ListField(default=[
+        {
+            "text": '№ п/п',
+            "align": 'start',
+            "sortable": False,
+            "value": 'num',
+            "width": '5%'
+        },
+        {"text": 'Наименование составных элементов электрооборудования лифта', "value": 'phrasing', "width": '30%'},
+        {"text": 'Нормативная документация и перечень пунктов, устанавливающих требования', "value": 'document',
+         "width": '30%'},
+        {"text": '', "value": 'delete_action', "width": '5%'},
+    ])
+    collapse = serializers.BooleanField(default=True)
+    expanded = serializers.ListField(default=[])
+
+    class Meta:
+        model = Table
+        fields = ['id', 'name', 'header', 'dataset', 'annex_table', 'defectheaders', 'collapse', 'expanded']
+
+
+    def to_representation(self, instance):
+        data = super(TableSerializer, self).to_representation(instance)
+        data['header'].sort(key=header_sort)
+        data['dataset'].sort(key=row_sort)
+        return data
+
+
+class FormSerializer(serializers.ModelSerializer):
+    tables = TableSerializer(many=True, source='table_set')
+
+    class Meta:
+        model = Form
+        fields = ['id', 'name', 'tables']
