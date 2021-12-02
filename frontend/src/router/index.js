@@ -11,6 +11,9 @@ import CreateForm from '../views/CreateForm.vue'
 import Protocol from '../views/Protocol.vue'
 import Contracts from '../views/Contracts.vue'
 import NewContract from "../views/NewContract.vue";
+import NewQuery from "../views/NewQuery.vue"
+import Guest from "../views/Guest.vue"
+import Base from '../views/Base.vue'
 
 Vue.use(VueRouter)
 
@@ -33,53 +36,76 @@ function dynamicPropsFn (route) {
         path: '',
         name: 'Table',
         component: List,
-        props: true
+        props: true,
       },
       {
         path:'query/:id',
         name: 'Query',
         component: Query,
-        props: true
+        props: true,
+        
       },
       {
         path: 'objects',
         name: 'Objects',
         component: Objects,
-        props: true
+        props: true,
       },
       {
         path:'inspection',
         name: 'Inspection',
-        component: Inspection
+        component: Inspection,
       },
       {
         path: 'createform',
         name: 'CreateForm',
-        component: CreateForm
+        component: CreateForm,
       },
       {
         path: 'newcontract',
         name: 'NewContract',
-        component: NewContract
+        component: NewContract,
       },
       {
         path: 'protocol/:id',
         name: 'Protocol',
         component: Protocol,
-        props: dynamicPropsFn
+        props: dynamicPropsFn,
       },
       {
         path: 'contracts',
         name: 'contracts',
         component: Contracts,
-      }
+      },
     ]
   },
   {
     path: '/login',
     name: 'login',
     component: Login
-  }
+  },
+  {
+    path: '/guest',
+    name: 'guest',
+    component: Guest,
+    children:[
+      {
+        path: '/',
+        name: 'BasePage',
+        component: Base
+      },
+      {
+        path: 'start',
+        name: 'AnonimeNewQuery',
+        component: NewQuery,
+      },
+      {
+        path: 'login',
+        name: 'Anonimelogin',
+        component: Login
+      },
+    ]
+  },
 ]
 
 const router = new VueRouter({
@@ -94,7 +120,9 @@ router.beforeEach((to, from, next) => {
       next()
       return
     }
-    next('/login')
+    next({
+      path: '/guest',
+    })
   } else {
     next()
   }

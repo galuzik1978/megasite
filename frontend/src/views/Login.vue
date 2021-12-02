@@ -45,6 +45,7 @@
                 </v-form>
               </v-card-text>
               <v-card-actions>
+                <v-btn @click="cancel">Отмена</v-btn>
                 <v-spacer></v-spacer>
                 <v-btn color="primary" @click="login">Войти</v-btn>
               </v-card-actions>
@@ -82,6 +83,10 @@
          this.$refs.form.reset()
          this.error = true
         })
+      },
+
+      cancel(){
+        this.$router.go(-1)
       }
     },
     props: {

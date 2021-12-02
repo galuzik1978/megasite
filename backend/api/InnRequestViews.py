@@ -6,7 +6,7 @@ from api.serializers import get_organization_by_inn
 
 class InnRequestView(APIView):
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @staticmethod
     def get(request, format=None):
