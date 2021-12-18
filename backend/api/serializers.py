@@ -9,12 +9,13 @@ from rest_framework.response import Response
 
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, \
-    Table, Header, Row, Sell
+    Table, Header, Row, Sell, Lead
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, Contract, ContractStatus, WorkRequest, \
     ObjRequest
 from user_profile.models import Profile, Role
 from util.customize import Company_INN, Company_Phone
+from dadata import Dadata
 
 token = 'e01d0b0411274cc94fd22aa9c2bf5bf5d9f14936' # "Replace with Dadata API key"
 secret = '29a8f7d7d8528121a4ecdeddc9796dc68d1c40f5' # "Replace with Dadata secret key"
@@ -22,6 +23,7 @@ secret = '29a8f7d7d8528121a4ecdeddc9796dc68d1c40f5' # "Replace with Dadata secre
 
 def header_sort(data):
     return data['order']
+
 
 def row_sort(data):
     return data['row_order']
@@ -63,7 +65,77 @@ def hint_address(address_string, request):
     return Response(data, status=response_status)
 
 
+def get_name(data):
+    name = {
+        'name': None,
+        'surname': None,
+        'lastname': None
+    }
+    if data.get('management'):
+        tmp = data['management'].get('name').split()
+        name['name'] = tmp[1]
+        name['surname'] = tmp[2]
+        name['lastname'] = tmp[0]
+    elif data.get('fio'):
+        name['name'] = data['fio']['name']
+        name['surname'] = data['fio']['patronymic']
+        name['lastname'] = data['fio']['surname']
+    return name
+
+
+def get_dadata_bank(bank, request):
+    dadata = Dadata(token)
+    result = dadata.suggest("bank", bank)
+    if len(result) == 0:
+        res = "Проверьте реквизиты банка. Банк не найден в базе"
+        response_status = status.HTTP_404_NOT_FOUND
+    else:
+        res = [{
+            'desc': "{}, БИК {}, ИНН {}".format(r['value'], r['data']['bic'], r['data']['inn']),
+            'name': r['value'],
+            'bic': r['data']['bic'],
+            'inn': r['data']['inn'],
+            'kpp': r['data']['kpp'],
+            'correspondent_account': r['data']['correspondent_account']
+        } for r in result]
+        response_status = status.HTTP_200_OK
+    return Response(res, status=response_status)
+
+
+def get_dadata(inn, request):
+    dadata = Dadata(token)
+    result = dadata.suggest("party", inn, count=20)
+
+    if len(result) == 0:
+        res = "Проверьте ИНН. ИНН не найден в базе"
+        response_status = status.HTTP_404_NOT_FOUND
+    else:
+        res = [{
+            'desc': '{}, {}. {}, {}'.format(
+                r['data']['inn'],
+                r['data']['address']['data']['city_type'],
+                r['data']['address']['data']['city'],
+                r['value']),
+            'inn': r['data']['inn'],
+            'kpp': r['data'].get('kpp', None),
+            'ogrn': r['data']['ogrn'],
+            'phone': r['data']['phones'],
+            'email': r['data']['emails'],
+            'full_name': r['data']['name']['full'],
+            'type_customer': r['data']['opf']['short'],
+            'head': r['data']['management']['post'] if r['data'].get('management') else r['data']['opf']['full'],
+            'head_name': get_name(r['data'])['name'],
+            'head_surname': get_name(r['data'])['surname'],
+            'head_lastname': get_name(r['data'])['lastname'],
+            'legal_address': r['data']['address']['value']
+        } for r in result]
+        response_status = status.HTTP_200_OK
+    return Response(res, status=response_status)
+
+
 def get_organization_by_inn(inn, request):
+    dadata = Dadata(token)
+    result = dadata.suggest("party", inn)
     url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
     headers = {
         "Content-Type": "application/json",
@@ -935,3 +1007,10 @@ class FormSerializer(serializers.ModelSerializer):
     class Meta:
         model = Form
         fields = ['id', 'name', 'tables']
+
+
+class LeadSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Lead
+        fields = ['__all__']

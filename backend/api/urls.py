@@ -41,6 +41,7 @@ router.register(r'protocol', views.ProtocolApiView)
 router.register(r'device', views.DeviceApiView)
 router.register(r'form', views.FormApiView)
 router.register(r'table', views.TableApiView)
+router.register(r'lead', views.LeadApiView)
 
 # app_name = 'restapi'
 urlpatterns = [
@@ -51,6 +52,7 @@ urlpatterns = [
     # path('api-token-auth/', rest_views.obtain_auth_token),
     path('api-token-auth/', views.CustomApiLoginView.as_view()),
     path('api/innrequest/', api.InnRequestViews.InnRequestView.as_view()),
+    path('api/bankrequest/', api.InnRequestViews.BankRequestView.as_view()),
     path('template/', views.TemplateView.as_view(), name='template'),
     path('contract/create_by_inbox/<int:inbox>/', views.CreateContractByInboxView.as_view(), name="ContractByInbox"),
     path('get_blank/', views.GetBlankView.as_view()),

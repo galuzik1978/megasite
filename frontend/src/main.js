@@ -4,10 +4,12 @@ import router from './router'
 import store from './store'
 import Axios from './config-axios'
 import vuetify from './plugins/vuetify'
+import VueDadata from 'vue-dadata'
 
 import VueCompositionApi from '@vue/composition-api'
 
 Vue.use(VueCompositionApi)
+Vue.use(VueDadata)
 
 Vue.prototype.$http = Axios
 

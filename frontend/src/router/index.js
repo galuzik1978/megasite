@@ -14,6 +14,7 @@ import NewContract from "../views/NewContract.vue";
 import NewQuery from "../views/NewQuery.vue"
 import Guest from "../views/Guest.vue"
 import Base from '../views/Base.vue'
+import SaveQuery from '../views/SaveQuery.vue'
 
 Vue.use(VueRouter)
 
@@ -86,7 +87,6 @@ function dynamicPropsFn (route) {
   },
   {
     path: '/guest',
-    name: 'guest',
     component: Guest,
     children:[
       {
@@ -103,6 +103,12 @@ function dynamicPropsFn (route) {
         path: 'login',
         name: 'Anonimelogin',
         component: Login
+      },
+      {
+        path: 'savequery',
+        name: 'SaveQuery',
+        component: SaveQuery,
+        props: true,
       },
     ]
   },

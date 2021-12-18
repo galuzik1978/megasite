@@ -388,3 +388,7 @@ class ProtocolAnnex(models.Model):
             self.protocol.num,
             self.protocol.date_act
         )
+
+
+class Lead(models.Model):
+    bank = models.CharField(max_length=150, null=True, verbose_name="Наименование банка")

@@ -11,6 +11,7 @@ from rest_framework.response import Response
 from rest_framework.utils import json
 from rest_framework.views import APIView
 
+from api.word_utility import get_request_template
 from util import customize
 from util.Mixins import FormMenuMixin
 
@@ -21,11 +22,11 @@ from api.serializers import InboxSer, SenderSer, ProfileSer, RoleSer, CustomerSe
     ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
     ProtocolAnnexSer, RulesSer, hint_address, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer, FormSer, \
-    TableSer, TableSerializer, FormSerializer
+    TableSer, TableSerializer, FormSerializer, LeadSerializer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, Table, Row, SellValue, \
-    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document, Header, Sell
+    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document, Header, Sell, Lead
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
@@ -849,4 +850,16 @@ class FormApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     queryset = Form.objects.all()
     serializer_class = FormSerializer
+
+
+class LeadApiView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+    queryset = Lead.objects.all()
+    serializer_class = LeadSerializer
+
+    def create(self, request, *args, **kwargs):
+        file_name = get_request_template(request.data)
+        response_status = status.HTTP_200_OK
+        return FileResponse(open(file_name, 'rb'), status=response_status)
 
