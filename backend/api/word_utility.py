@@ -142,6 +142,7 @@ def get_main_NK(document, data):
 
     document.add_paragraph()
 
+
 def get_request_template(data):
     document = Document()
     header = [

@@ -1,11 +1,12 @@
 import json
-
+from dadata import Dadata
 import requests
 from django.contrib.auth.models import User
 from django.db.models import Max
 from django.utils.datetime_safe import datetime
-from rest_framework import serializers, status
+from rest_framework import serializers, status, authentication, permissions
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, \
@@ -15,25 +16,67 @@ from postoffice.models import Inbox, Outbox, TypeLetter, SendStatus, TypeWork, C
     ObjRequest
 from user_profile.models import Profile, Role
 from util.customize import Company_INN, Company_Phone
-from dadata import Dadata
 
 token = 'e01d0b0411274cc94fd22aa9c2bf5bf5d9f14936' # "Replace with Dadata API key"
 secret = '29a8f7d7d8528121a4ecdeddc9796dc68d1c40f5' # "Replace with Dadata secret key"
 
 
-def header_sort(data):
-    return data['order']
+def get_organization_by_inn(inn, request):
+    dadata = Dadata(token)
+    result = dadata.suggest("party", inn)
+    url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": "Token {}".format(token)
+    }
+    data = {"query": inn}
+    r = requests.post(url, headers=headers, json=data)
+    try:
+        res = r.json()['suggestions'][0]['data']
+        try:
+            type_customer = TypeOrganisation.objects.get(name=res['opf']['full'])
+        except TypeOrganisation.DoesNotExist:
+            type_customer = TypeOrganisation.objects.create(name=res['opf']['full'])
 
+        if res['type'] == 'LEGAL':
+            head_name = res['management']['name'].split()
+            data = {
+                'full_name': res['name']['short_with_opf'],
+                'head': res['management']['post'],
+                'head_name': head_name[1],
+                'head_surname': head_name[2],
+                'head_last_name': head_name[0],
+                'kpp': res['kpp'],
+                'ogrn': res['ogrn'],
+                'inn': res['inn'],
+                'address': res['address']['unrestricted_value'],
+                'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
+                # {"id":type_customer.pk,"name":type_customer.name}
+            }
+        elif res['type'] == 'INDIVIDUAL':
+            head_name = res['name']['full'].split()
+            data = {
+                'full_name': res['name']['short_with_opf'],
+                'head': res['opf']['full'],
+                'head_name': head_name[1],
+                'head_surname': head_name[2],
+                'head_last_name': head_name[0],
+                'kpp': '',
+                'ogrn': res['ogrn'],
+                'inn': res['inn'],
+                'address': res['address']['unrestricted_value'],
+                'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
+            }
+        else:
+            raise Exception("Не известная форма собственности: {}".format(res['type']))
+        response_status = status.HTTP_200_OK
+        data['len'] = len(r.json()['suggestions'])
+    except IndexError:
+        data = "Проверьте ИНН. ИНН не найден в базе"
+        response_status = status.HTTP_404_NOT_FOUND
 
-def row_sort(data):
-    return data['row_order']
-
-
-class TypeCustomerSer(serializers.ModelSerializer):
-
-    class Meta:
-        model = TypeOrganisation
-        fields = '__all__'
+    return Response(data, status=response_status)
 
 
 def hint_address(address_string, request):
@@ -133,62 +176,19 @@ def get_dadata(inn, request):
     return Response(res, status=response_status)
 
 
-def get_organization_by_inn(inn, request):
-    dadata = Dadata(token)
-    result = dadata.suggest("party", inn)
-    url = "https://suggestions.dadata.ru/suggestions/api/4_1/rs/suggest/party"
-    headers = {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Authorization": "Token {}".format(token)
-    }
-    data = {"query": inn}
-    r = requests.post(url, headers=headers, json=data)
-    try:
-        res = r.json()['suggestions'][0]['data']
-        try:
-            type_customer = TypeOrganisation.objects.get(name=res['opf']['full'])
-        except TypeOrganisation.DoesNotExist:
-            type_customer = TypeOrganisation.objects.create(name=res['opf']['full'])
+def header_sort(data):
+    return data['order']
 
-        if res['type'] == 'LEGAL':
-            head_name = res['management']['name'].split()
-            data = {
-                'full_name': res['name']['short_with_opf'],
-                'head': res['management']['post'],
-                'head_name': head_name[1],
-                'head_surname': head_name[2],
-                'head_last_name': head_name[0],
-                'kpp': res['kpp'],
-                'ogrn': res['ogrn'],
-                'inn': res['inn'],
-                'address': res['address']['unrestricted_value'],
-                'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
-                # {"id":type_customer.pk,"name":type_customer.name}
-            }
-        elif res['type'] == 'INDIVIDUAL':
-            head_name = res['name']['full'].split()
-            data = {
-                'full_name': res['name']['short_with_opf'],
-                'head': res['opf']['full'],
-                'head_name': head_name[1],
-                'head_surname': head_name[2],
-                'head_last_name': head_name[0],
-                'kpp': '',
-                'ogrn': res['ogrn'],
-                'inn': res['inn'],
-                'address': res['address']['unrestricted_value'],
-                'type_customer': TypeCustomerSer(type_customer, context={'request': request}).data
-            }
-        else:
-            raise Exception("Не известная форма собственности: {}".format(res['type']))
-        response_status = status.HTTP_200_OK
-        data['len'] = len(r.json()['suggestions'])
-    except IndexError:
-        data = "Проверьте ИНН. ИНН не найден в базе"
-        response_status = status.HTTP_404_NOT_FOUND
 
-    return Response(data, status=response_status)
+def row_sort(data):
+    return data['row_order']
+
+
+class TypeCustomerSer(serializers.ModelSerializer):
+
+    class Meta:
+        model = TypeOrganisation
+        fields = '__all__'
 
 
 class RoleSer(serializers.ModelSerializer):
@@ -223,6 +223,14 @@ class ProfileSer(serializers.ModelSerializer):
 
     def validate_user(self, value):
         return value
+
+
+class UserSer(serializers.ModelSerializer):
+    profile = ProfileSer(required=False)
+
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'last_name', 'email', 'profile']
 
 
 class SenderSer(serializers.ModelSerializer):
@@ -1013,4 +1021,10 @@ class LeadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lead
-        fields = ['__all__']
+        fields = '__all__'
+
+
+class AppSerializer(serializers.Serializer):
+    app = serializers.CharField()
+
+

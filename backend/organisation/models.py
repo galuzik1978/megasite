@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class TypeOrganisation(models.Model):
@@ -117,7 +118,7 @@ class Organisation(models.Model):
     head_surname = models.CharField(help_text="Отчество руководителя",  max_length=50)
     head_last_name = models.CharField(help_text="Фамилия руководителя", max_length=50)
     kpp = models.BigIntegerField(help_text="КПП", blank=True, null=True)
-    ogrn = models.BigIntegerField(help_text="ОГРН")
+    ogrn = models.BigIntegerField(help_text="ОГРН", null=True)
     bank = models.CharField(help_text="Наименование банка", max_length=200, blank=True, null=True)
     account = models.BigIntegerField(help_text="Расчетный счет", blank=True, null=True)
     cor_account = models.BigIntegerField(help_text="Кор.счёт", blank=True, null=True)
@@ -258,6 +259,7 @@ class Table(models.Model):
             self.name
         )
 
+
 class Header(models.Model):
     ALIGN_CHOICES = [
         (0, 'none'),
@@ -390,5 +392,104 @@ class ProtocolAnnex(models.Model):
         )
 
 
+class LeadStatus(models.Model):
+    name = models.CharField(max_length=25, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class LeadWork(models.Model):
+    name = models.CharField(max_length=125, null=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Lead(models.Model):
-    bank = models.CharField(max_length=150, null=True, verbose_name="Наименование банка")
+    customer_full_name = models.CharField(max_length=255, null=True)
+    customer_type = models.ForeignKey(TypeOrganisation, on_delete=models.PROTECT)
+    customer_head = models.CharField(max_length=55, null=True)
+    customer_name = models.CharField(max_length=55, null=True)
+    customer_surname = models.CharField(max_length=55, null=True)
+    customer_lastname = models.CharField(max_length=55, null=True)
+    customer_inn = models.CharField(max_length=25, null=True)
+    customer_kpp = models.CharField(max_length=25, null=True)
+    customer_ogrn = models.CharField(max_length=25, null=True)
+    customer_contact_name = models.CharField(max_length=255, null=True)
+    customer_email = models.CharField(max_length=255, null=True)
+    customer_phone = models.CharField(max_length=15, null=True)
+    customer_legal_address = models.CharField(max_length=255, null=True)
+    customer_post_address = models.CharField(max_length=255, null=True)
+    customer = models.ForeignKey(Organisation, on_delete=models.PROTECT, null=True)
+    bank_name = models.CharField(max_length=150, null=True, verbose_name="Наименование банка")
+    bank_bic = models.CharField(max_length=15, null=True)
+    bank_inn = models.CharField(max_length=15, null=True)
+    bank_kpp = models.CharField(max_length=15, null=True)
+    bank_correspondent_account = models.CharField(max_length=55, null=True)
+    bank_payment_account = models.CharField(max_length=55, null=True)
+    work = models.ForeignKey(LeadWork, on_delete=models.PROTECT, null=True)
+    sent = models.DateTimeField(default=timezone.now)
+    status = models.ForeignKey(LeadStatus, on_delete=models.PROTECT, default=1)
+
+
+class LeadLog(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.PROTECT)
+    time = models.DateTimeField(default=timezone.now)
+    event = models.CharField(max_length=55)
+    author = models.ForeignKey(User, on_delete=models.PROTECT)
+
+
+class WorkControl(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class WorkMethod(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class WorkObjAddress(models.Model):
+    address = models.CharField(max_length=255, null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class WorkObject(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class WorkType(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class WorkLift(models.Model):
+    address = models.CharField(max_length=255, null=True)
+    reg_number = models.CharField(max_length=255, null=True)
+    type = models.CharField(max_length=25, null=True)
+    capacity = models.IntegerField(null=True)
+    floors = models.IntegerField(null=True)
+    manufactured = models.IntegerField(null=True)
+    last_verife = models.DateField(null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class WorkControlObject(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+
+
+class LeadForm(models.Model):
+    name = models.CharField(max_length=55, null=True)
+    form = models.FileField(upload_to="LeadForm")
+    lead = models.ForeignKey(Lead, on_delete=models.PROTECT)
+
+
+class FlawDetectionObject(models.Model):
+    address = models.CharField(max_length=255)
+    object = models.CharField(max_length=255)
+    element = models.CharField(max_length=255)
+    count = models.IntegerField()
+    lead = models.ForeignKey(Lead, on_delete=models.PROTECT)

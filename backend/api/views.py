@@ -1,17 +1,20 @@
-from datetime import datetime
+import os
+from datetime import datetime, date
 
 import django
 from django.contrib.auth.models import User
+from django.core.files import File
+from django.core.mail import EmailMessage, get_connection, send_mail
 from django.http import JsonResponse, FileResponse
+from django.template.loader import render_to_string
 from django.views.generic import TemplateView
 from rest_framework import viewsets, permissions, authentication, status
-from rest_framework.authtoken.models import Token
-from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.utils import json
 from rest_framework.views import APIView
 
 from api.word_utility import get_request_template
+from project_root import settings
 from util import customize
 from util.Mixins import FormMenuMixin
 
@@ -21,17 +24,48 @@ from api.serializers import InboxSer, SenderSer, ProfileSer, RoleSer, CustomerSe
     StatusDeviceSer, TypeDeviceSer, RangeMeasureSer, AccuracyClassSer, ObjectSer, ProtocolSer, DeviceSer, \
     ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
-    ProtocolAnnexSer, RulesSer, hint_address, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer, FormSer, \
-    TableSer, TableSerializer, FormSerializer, LeadSerializer
+    ProtocolAnnexSer, RulesSer, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer, \
+    TableSerializer, FormSerializer, LeadSerializer, UserSer, hint_address, get_dadata_bank, get_dadata
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, Table, Row, SellValue, \
-    ProtocolAnnex, ObservedDefect, Reason, DefectList, Document, Header, Sell, Lead
+    ProtocolAnnex, ObservedDefect, DefectList, Document, Header, Sell, Lead, LeadStatus, LeadForm, LeadWork, \
+    WorkObject, FlawDetectionObject, WorkLift, WorkObjAddress, WorkControl
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
 from util.customize import tables
 from util.functions import capacity_text_to_decimal
+
+
+class InnRequestView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    @staticmethod
+    def get(request, format=None):
+        inn = request.query_params['inn']
+        return get_dadata(inn, request)
+
+    @staticmethod
+    def post(request, format=None):
+        inn = request.query_params['inn']
+        return get_dadata(inn, request)
+
+
+class BankRequestView(APIView):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    @staticmethod
+    def get(request, format=None):
+        bank = request.query_params['bank']
+        return get_dadata_bank(bank, request)
+
+    @staticmethod
+    def post(request, format=None):
+        bank = request.query_params['bank']
+        return get_dadata_bank(bank, request)
 
 
 class MainPageView(FormMenuMixin, TemplateView):
@@ -43,6 +77,13 @@ class SenderApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = User.objects.all().filter(is_staff=False)
     serializer_class = SenderSer
+
+
+class UserApiView(viewsets.ModelViewSet):
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all().filter(is_staff=True)
+    serializer_class = UserSer
 
 
 class ManagerApiView(viewsets.ModelViewSet):
@@ -107,10 +148,6 @@ class ContractApiView(viewsets.ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = ContractSer
 
-    def post(self, *args, **kwargs):
-        res = super(ContractApiView, self).post(*args, **kwargs)
-        return res
-
 
 class StatusApiView(viewsets.ModelViewSet):
     authentication_classes = [authentication.TokenAuthentication]
@@ -134,8 +171,8 @@ class EventTypeApiView(viewsets.ModelViewSet):
 
 
 class MainWorkApiView(viewsets.ModelViewSet):
-    # authentication_classes = [authentication.TokenAuthentication]
-    # permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
     queryset = MainWork.objects.all()
     serializer_class = MainWorkSer
 
@@ -243,7 +280,7 @@ class ProtocolApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     queryset = Protocol.objects.all()
     serializer_class = ProtocolSer
-    
+
     def retrieve(self, request, *args, **kwargs):
         exam_object = ObjRequest.objects.get(**kwargs)
         protocol = exam_object.protocol
@@ -298,7 +335,8 @@ class ProtocolApiView(viewsets.ModelViewSet):
                     "value": 'num',
                     "width": '5%'
                 },
-                {"text": 'Наименование составных элементов электрооборудования лифта', "value": 'phrasing', "width": '30%'},
+                {"text": 'Наименование составных элементов электрооборудования лифта', "value": 'phrasing',
+                 "width": '30%'},
                 {"text": 'Нормативная документация и перечень пунктов, устанавливающих требования', "value": 'document',
                  "width": '30%'},
                 {"text": '', "value": 'delete_action', "width": '5%'},
@@ -308,8 +346,8 @@ class ProtocolApiView(viewsets.ModelViewSet):
             for defect in table.rowdefects_set.all():
                 table.defects.append(
                     {
-                        'document':defect.defect.reason.document.name,
-                        'phrasing':defect.defect.phrasing
+                        'document': defect.defect.reason.document.name,
+                        'phrasing': defect.defect.phrasing
                     }
                 )
             rows = table.row_set.all()
@@ -322,12 +360,12 @@ class ProtocolApiView(viewsets.ModelViewSet):
                         protocol.protocolannex_set.filter(row_id=row),
                         many=True
                     ).data,
-                    'defects':[]
+                    'defects': []
                 }
                 sells = row.sell_set.all()
                 for sell in sells:
                     sell.sell_value = sell.sellvalue_set.filter(protocol=protocol).first()
-                    if sell.sell_value is None :
+                    if sell.sell_value is None:
                         dataset[sell.value] = sell.text
                     else:
                         dataset[sell.value] = sell.sell_value.value
@@ -340,7 +378,7 @@ class ProtocolApiView(viewsets.ModelViewSet):
                 table.dataset.append(dataset)
                 table.collapse = True
         return Response(FullProtocolSer(data).data)
-    
+
     def update(self, request, *args, **kwargs):
         data = json.loads(request.data['data'])
 
@@ -358,7 +396,7 @@ class ProtocolApiView(viewsets.ModelViewSet):
 
         # Добавим новые приложения, отсутствующие в базе
         for annex in data['annex_table']:
-            if len(protocol.protocolannex_set.filter(filename=annex['filename']))==0:
+            if len(protocol.protocolannex_set.filter(filename=annex['filename'])) == 0:
                 ProtocolAnnex.objects.create(
                     protocol=protocol,
                     filename=annex['filename'],
@@ -392,7 +430,8 @@ class ProtocolApiView(viewsets.ModelViewSet):
                     if (annex.filename in annex_filenames) == False:
                         annex.delete()
                 for annex in r['annex_table']:
-                    if len(protocol.protocolannex_set.filter(table=table).filter(row=row).filter(filename=annex['filename'])) == 0:
+                    if len(protocol.protocolannex_set.filter(table=table).filter(row=row).filter(
+                            filename=annex['filename'])) == 0:
                         ProtocolAnnex.objects.create(
                             protocol=protocol,
                             table=table,
@@ -415,7 +454,8 @@ class ProtocolApiView(viewsets.ModelViewSet):
                     # Удаляем дефекты, отсутствующие в полученных данных из базы
                     old_defects = sell_value.observeddefect_set.all()
                     for old in old_defects:
-                        if ({'document':old.defect.reason.document.name, 'phrasing':old.defect.phrasing} in r['defects']) == False:
+                        if ({'document': old.defect.reason.document.name, 'phrasing': old.defect.phrasing} in r[
+                            'defects']) == False:
                             old.delete()
 
                     # Добавляем новые дефекты, отсутствующие в базе
@@ -456,27 +496,6 @@ class TemplateView(APIView):
     @staticmethod
     def post(request, format=None):
         return Response({'desktop': customize.desk_config, 'tables': customize.tables})
-
-
-class CustomApiLoginView(ObtainAuthToken):
-    def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data,
-                                           context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user': "{} {} {}".format(user.first_name, user.profile.surname, user.last_name),
-            'role': user.profile.role.name,
-            'email': user.email,
-            'desktop': customize.desk_config['manager']['sections'],
-            'tables': customize.tables,
-            'title': customize.TITLE,
-            'logo': customize.LOGO,
-            'company': customize.COMPANY,
-            'start_page': customize.desk_config['manager']['start_page']
-        })
 
 
 class CreateContractByInboxView(APIView):
@@ -660,7 +679,7 @@ class WorkRequestView(APIView):
             if obj.get('id', False):
                 # Если заявка уже зарегистрирована
                 work_object = work_request.object_req.get(pk=obj['id'])
-                work_object.postcode = int(address['postcode'])if address['postcode'] != 'null' else None
+                work_object.postcode = int(address['postcode']) if address['postcode'] != 'null' else None
                 work_object.region = address['region']
                 work_object.city = address['city']
                 work_object.street_type = street_type
@@ -744,10 +763,10 @@ class FileFieldTestView(APIView):
 
     def get(self, request):
         inboxes = Inbox.objects.all()
-        files =  []
+        files = []
         for inbox in inboxes:
             if inbox.annex.name:
-                files.append({'file':inbox.annex})
+                files.append({'file': inbox.annex})
         res = FileFieldTestSer(files, many=True)
         return Response(res.data)
 
@@ -757,7 +776,7 @@ class TableApiView(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
     queryset = Table.objects.all()
     serializer_class = TableSerializer
-     
+
     def create(self, request, *args, **kwargs):
         try:
             table = Table.objects.get(pk=request.data['id'])
@@ -765,7 +784,7 @@ class TableApiView(viewsets.ModelViewSet):
             table.save()
         except Table.DoesNotExist:
             table = Table.objects.create(
-                name = request.data['name']
+                name=request.data['name']
             )
         # Удаляем заголовки из базы данных, отсутствующие в принятом массиве
         headers = Header.objects.filter(table=table)
@@ -806,7 +825,7 @@ class TableApiView(viewsets.ModelViewSet):
         ids = [row['row_id'] for row in request.data['dataset']]
         for row in rows:
             if row.id not in ids:
-                sells = Sell.objects.filter(row=r)
+                sells = Sell.objects.filter(row=row)
                 for sell in sells:
                     sell.delete()
                 row.delete()
@@ -840,7 +859,7 @@ class TableApiView(viewsets.ModelViewSet):
                     )
         response_status = status.HTTP_200_OK
         return Response("Все океюшки", status=response_status)
-    
+
     def update(self, request, *args, **kwargs):
         return super(TableApiView, self).update(request, *args, **kwargs)
 
@@ -859,7 +878,145 @@ class LeadApiView(viewsets.ModelViewSet):
     serializer_class = LeadSerializer
 
     def create(self, request, *args, **kwargs):
-        file_name = get_request_template(request.data)
-        response_status = status.HTTP_200_OK
-        return FileResponse(open(file_name, 'rb'), status=response_status)
+        data = request.data
+        file_name = get_request_template(data)
 
+        try:
+            lead_status = LeadStatus.objects.get(name="необработанная заявка")
+        except LeadStatus.DoesNotExist:
+            lead_status = LeadStatus.objects.create(name="необработанная заявка")
+
+        try:
+            lead_work = LeadWork.objects.get(name=data.get('work'))
+        except LeadWork.DoesNotExist:
+            lead_work = LeadWork.objects.create(name=data.get('work'))
+
+        try:
+            customer_type = TypeOrganisation.objects.get(name=data['customer'].get('type_customer'))
+        except TypeOrganisation.DoesNotExist:
+            customer_type = TypeOrganisation.objects.create(name=data['customer'].get('type_customer'))
+
+        lead = Lead.objects.create(
+            customer_full_name=data['customer'].get('full_name'),
+            customer_type=customer_type,
+            customer_head=data['customer'].get('head'),
+            customer_name=data['customer'].get('head_name'),
+            customer_surname=data['customer'].get('head_surname'),
+            customer_lastname=data['customer'].get('head_lastname'),
+            customer_inn=data['customer'].get('inn'),
+            customer_kpp=data['customer'].get('kpp'),
+            customer_ogrn=data['customer'].get('ogrn'),
+            customer_contact_name=data['customer'].get('contact_name'),
+            customer_email=data['customer'].get('email'),
+            customer_phone=data['customer'].get('phone'),
+            customer_legal_address=data['customer'].get('legal_address'),
+            customer_post_address=data['customer'].get('post_address'),
+            bank_name=data['bank'].get('name'),
+            bank_bic=data['bank'].get('bic'),
+            bank_inn=data['bank'].get('inn'),
+            bank_kpp=data['bank'].get('kpp'),
+            bank_correspondent_account=data['bank'].get('correspondent_account'),
+            bank_payment_account=data['bank'].get('payment_account'),
+            work=lead_work,
+            status=lead_status
+        )
+        if request.user.is_staff:
+            try:
+                lead_status = LeadStatus.objects.get(name="проверенная заявка")
+            except LeadStatus.DoesNotExist:
+                lead_status = LeadStatus.objects.create(name="проверенная заявка")
+            lead.status = lead_status
+
+            try:
+                customer = Organisation.objects.get(inn=data['customer']['inn'])
+            except Organisation.DoesNotExist:
+                customer = Organisation.objects.create(
+                    inn=data['customer']['inn'], type_customer=customer_type
+                )
+        lead_form = LeadForm.objects.create(
+            lead=lead,
+            name=file_name,
+            form=File(open(file_name, 'rb')),
+        )
+
+        if 'неразрушающего контроля' in lead.work.name:
+            for obj in data['objects']:
+                work_object = WorkObject.objects.create(
+                    lead=lead,
+                    # address=obj
+                )
+            for method in data['methods']:
+                work_method = WorkObject.objects.create(
+                    lead=lead,
+                    name=method
+                )
+            for row in data['table1_rows']:
+                FlawDetectionObject.objects.create(
+                    address=row['address'],
+                    object=row['object'],
+                    element=row['element'],
+                    count=int(row['count']),
+                    lead=lead
+                )
+        elif 'оценки соответствия лифта' in lead.work.name:
+            for row in data['table_rows']:
+                tmp = row['date_exam'].split('-')
+                tmp.append('1')
+                s = [int(r) for r in tmp]
+                last_verife = date(s[0], s[1], s[2])
+                WorkLift.objects.create(
+                    address=row['address'],
+                    reg_number=row['reg_num'],
+                    type=row['type_lift'],
+                    capacity=row['capacity'],
+                    floors=int(row['floors']),
+                    manufactured=int(row['mf_year']),
+                    last_verife=last_verife,
+                    lead=lead
+                )
+        elif 'испытаний электрооборудования' in lead.work.name:
+            WorkObjAddress.objects.create(
+                address=data['obj_address'],
+                lead=lead
+            )
+            for control in data['controls']:
+                WorkControl.objects.create(
+                    name=control,
+                    lead=lead
+                )
+        else:
+            response_status = status.HTTP_404_NOT_FOUND
+            return Response("Неизвестный вид работы", status=response_status)
+        html_content = render_to_string('mail/request_mail.html', {'UUID':file_name.title()[:-5]})
+        mail = EmailMessage(
+            to=[lead.customer_email],
+            subject='Ваша заявка получена',
+            body=html_content
+        )
+        mail.attach_file(file_name)
+        mail.content_subtype = 'html'
+        mail.send(fail_silently=False)
+        os.remove(file_name)
+        # customer = models.ForeignKey(Organisation, on_delete=models.PROTECT)
+        response_status = status.HTTP_200_OK
+        return FileResponse(lead_form.form, status=response_status)
+
+
+class SendRequestView(APIView):
+    authentication_classes = [authentication.BasicAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, lead):
+        lead = Lead.objects.get(pk=lead)
+        response_status = status.HTTP_200_OK
+        return Response("Заявка отправлена заказчику", status=response_status)
+
+
+class SendContractView(APIView):
+    authentication_classes = [authentication.BasicAuthentication]
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, lead):
+        lead = Lead.objects.get(pk=lead)
+        response_status = status.HTTP_200_OK
+        return Response("Договор отправлен заказчику", status=response_status)

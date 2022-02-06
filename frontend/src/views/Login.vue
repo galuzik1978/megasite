@@ -73,6 +73,7 @@
     },
     methods: {
       login: function () {
+        console.log('login')
         let username = this.username 
         let password = this.password
         this.$store.dispatch('login', { username, password})

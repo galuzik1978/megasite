@@ -197,6 +197,56 @@ in_work_inbox['actions'] = {
     },
 }
 
+lead = {
+    'name': 'lead',
+    'url': 'api/lead/',
+    'title': 'Новые заявки',
+    'ident': ['num', ],
+    'headers': [
+        {
+            'text': 'Номер',
+            'align': 'center',
+            'sortable': True,
+            'value': 'num',
+        },
+        {
+            'text': 'Заказчик',
+            'align': 'center',
+            'sortable': True,
+            'value': 'customer_full_name',
+        },
+        {
+            'text': 'Вид работы',
+            'align': 'center',
+            'sortable': True,
+            'value': 'work.name',
+        },
+        {
+            'text': 'Дата заявки',
+            'align': 'center',
+            'sortable': True,
+            'value': 'status.date',
+        },
+    ],
+    'edit': {
+        'title': 'Новый входящий',
+        'fields': {
+            'id': {
+                'type': 'hidden',
+                'name': 'id'
+            },
+            "date": {
+                'customer_full_name': 'date',
+                'text': 'Заказчик',
+                'width': 6,
+                'icon': 'mdi-calendar',
+                'name': "date",
+                'value': ""
+            },
+        },
+    },
+}
+
 # Конфигурация таблиц и доступа к ним, в зависимости от контекста
 tables = {
     'inbox': inbox,
@@ -627,7 +677,7 @@ tables = {
     },
     'role': {
         'name': 'role',
-        'url': 'api/role/', 
+        'url': 'api/role/',
         'title': 'Должность',
         'ident': ['name'],
         'headers': [
@@ -816,13 +866,7 @@ tables = {
                 'text': 'Полное наименование',
                 'align': 'center',
                 'sortable': True,
-                'value': 'inn_filial',
-            },
-            {
-                'text': 'Тип организации',
-                'align': 'center',
-                'sortable': True,
-                'value': 'type_customer',
+                'value': 'full_name',
             },
             {
                 'text': 'Тип организации',
@@ -2687,6 +2731,15 @@ desk_config = {
     'manager': {
         'sections': [
             {
+                'text': 'Новые заявки',
+                'table': tables['new_inbox'],
+                'buttons': '',
+                'icon': 'mdi-file-question-outline',
+                'menu': top_menu,
+                'is_active': False,
+                'color': 'red'
+            },
+            {
                 'text': 'Задачи',
                 'table': tables['task'],
                 'icon': 'far fa-handshake',
@@ -2703,15 +2756,7 @@ desk_config = {
                 'is_active': False,
                 'color': 'red'
             },
-            {
-                'text': 'Новые заявки',
-                'table': tables['new_inbox'],
-                'buttons': '',
-                'icon': 'mdi-file-question-outline',
-                'menu': top_menu,
-                'is_active': False,
-                'color': 'red'
-            },
+
             {
                 'text': 'Заявки в работе',
                 'table': tables['in_work_inbox'],
@@ -2755,6 +2800,6 @@ desk_config = {
                 'color': 'red'
             },
         ],
-        'start_page': "Заявки в работе"
+        'start_page': 'Новые заявки'
     }
 }

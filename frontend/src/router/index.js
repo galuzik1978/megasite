@@ -15,6 +15,7 @@ import NewQuery from "../views/NewQuery.vue"
 import Guest from "../views/Guest.vue"
 import Base from '../views/Base.vue'
 import SaveQuery from '../views/SaveQuery.vue'
+import Administration from '../views/Administration.vue'
 
 Vue.use(VueRouter)
 
@@ -77,6 +78,11 @@ function dynamicPropsFn (route) {
         path: 'contracts',
         name: 'contracts',
         component: Contracts,
+      },
+      {
+        path: 'administration',
+        name: 'administration',
+        component: Administration,
       },
     ]
   },

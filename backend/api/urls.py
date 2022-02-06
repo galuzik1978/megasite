@@ -3,6 +3,8 @@ from django.urls import path, include
 
 import api.InnRequestViews
 import api.PostHandlerViews
+import api.adminviews
+import api.views
 from api import views
 from rest_framework.authtoken import views as rest_views
 
@@ -41,7 +43,8 @@ router.register(r'protocol', views.ProtocolApiView)
 router.register(r'device', views.DeviceApiView)
 router.register(r'form', views.FormApiView)
 router.register(r'table', views.TableApiView)
-router.register(r'lead', views.LeadApiView)
+router.register(r'lead', views.LeadApiView, basename='lead')
+router.register(r'user', views.UserApiView)
 
 # app_name = 'restapi'
 urlpatterns = [
@@ -50,9 +53,9 @@ urlpatterns = [
     path('inbox/decline/<int:inbox>/', api.PostHandlerViews.InboxDeclineView.as_view(), name='inboxDecline'),
     path('inbox/accept/<int:inbox>/', api.PostHandlerViews.InboxAcceptView.as_view(), name='inboxAccept'),
     # path('api-token-auth/', rest_views.obtain_auth_token),
-    path('api-token-auth/', views.CustomApiLoginView.as_view()),
-    path('api/innrequest/', api.InnRequestViews.InnRequestView.as_view()),
-    path('api/bankrequest/', api.InnRequestViews.BankRequestView.as_view()),
+    path('api-token-auth/', api.adminviews.CustomApiLoginView.as_view()),
+    path('api/innrequest/', api.views.InnRequestView.as_view()),
+    path('api/bankrequest/', api.views.BankRequestView.as_view()),
     path('template/', views.TemplateView.as_view(), name='template'),
     path('contract/create_by_inbox/<int:inbox>/', views.CreateContractByInboxView.as_view(), name="ContractByInbox"),
     path('get_blank/', views.GetBlankView.as_view()),
@@ -60,4 +63,7 @@ urlpatterns = [
     path('api/workrequest/<int:contract>/', views.WorkRequestView.as_view(), name='newWorkRequest'),
     path('api/workrequest/', views.WorkRequestListView.as_view(), name='WorkRequestList'),
     path('api/testfilefield/', views.FileFieldTestView.as_view(), name='FileFieldTest'),
+    path('api/apps/', api.adminviews.AppView.as_view(), name='AppList'),
+    path('lead/send_request/<int:lead>/', api.views.SendRequestView.as_view(), name='send_request'),
+    path('lead/send_contract/<int:lead>/', api.views.SendContractView.as_view(), name='send_contract')
 ]

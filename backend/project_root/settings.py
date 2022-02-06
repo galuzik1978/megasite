@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'organisation.apps.OrganisationConfig',
     'postoffice.apps.PostofficeConfig',
     'mainWork.apps.MainworkConfig',
+    'api.apps.ApiConfig'
 ]
 
 MIDDLEWARE = [
@@ -158,3 +159,13 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
 }
+
+DEFAULT_FROM_EMAIL = env("EMAIL")
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+SERVER_EMAIL = env('EMAIL_HOST_USER')
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env('EMAIL_PORT')
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS=True # env('EMAIL_USE_TLS')
+EMAIL_USE_SSL = False
