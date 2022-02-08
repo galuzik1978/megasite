@@ -1,4 +1,4 @@
-FROM node:6.14 as ui-builder
+FROM node:14.18 as ui-builder
 
 # делаем каталог 'app' текущим рабочим каталогом
 RUN mkdir /usr/src/app
