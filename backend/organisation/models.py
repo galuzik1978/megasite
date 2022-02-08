@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-
+import uuid
 
 class TypeOrganisation(models.Model):
     name = models.CharField("Тип организации", max_length=255)
@@ -431,10 +431,11 @@ class Lead(models.Model):
     work = models.ForeignKey(LeadWork, on_delete=models.PROTECT, null=True)
     sent = models.DateTimeField(default=timezone.now)
     status = models.ForeignKey(LeadStatus, on_delete=models.PROTECT, default=1)
+    uuid = models.UUIDField(default=uuid.uuid4)
 
 
 class LeadLog(models.Model):
-    lead = models.ForeignKey(Lead, on_delete=models.PROTECT)
+    lead = models.ForeignKey(Lead, related_name='leadlog', on_delete=models.PROTECT)
     time = models.DateTimeField(default=timezone.now)
     event = models.CharField(max_length=55)
     author = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -483,8 +484,12 @@ class WorkControlObject(models.Model):
 
 class LeadForm(models.Model):
     name = models.CharField(max_length=55, null=True)
-    form = models.FileField(upload_to="LeadForm")
-    lead = models.ForeignKey(Lead, on_delete=models.PROTECT)
+    form = models.FileField(upload_to="LeadForm/%Y/%m/")
+    change = models.DateTimeField(default=timezone.now)
+    lead = models.ForeignKey(Lead, on_delete=models.PROTECT, related_name='lead_form')
+
+    class Meta:
+        ordering = ('-change',)
 
 
 class FlawDetectionObject(models.Model):

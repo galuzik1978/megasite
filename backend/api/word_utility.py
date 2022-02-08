@@ -1,8 +1,12 @@
+import datetime
+import locale
 import uuid
 
 from docx import Document
 from docx.shared import Cm, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT, WD_TAB_LEADER
+
+from organisation.models import Organisation, TypeOrganisation
 
 
 def get_main_electric(document, data):
@@ -333,9 +337,34 @@ def get_request_template(data):
     pf.space_before = Pt(0)
     pf.space_after = Pt(0)
 
-    file_name = uuid.uuid4().hex + '.docx'
+    file_name = 'Заявка.docx'
     document.save(file_name)
     return file_name
+
+
+def get_contract(lead):
+    type_customer = TypeOrganisation.objects.get(name="Общество с ограниченной ответственностью")
+    my_organisation = Organisation.objects.filter(type_customer=type_customer).first()
+    file_name = 'api/blank lifts.docx'
+    document = Document('api/blank lifts.docx')
+    my_organisation
+    for p in document.paragraphs:
+        for r in p.runs:
+            r.text = r.text.replace('{%num_contract%}', str(lead.pk))
+            r.text = r.text.replace('{%date_contract%}', datetime.date.today().strftime("«%d» %B %Y"))
+            r.text = r.text.replace('{%city%}', 'Новокузнецк')
+            r.text = r.text.replace('{%customer_full%}', lead.customer_full_name)
+            r.text = r.text.replace('{%customer_head%}', '{} {} {} {}'.format(
+                lead.customer_head,
+                lead.customer_name,
+                lead.customer_surname,
+                lead.customer_lastname
+            ))
+            r.text = r.text.replace('{%executor_full%}', "Общество с ограниченной ответственностью «ИКЦ «Запсиб-Экспертиза»")
+            r.text = r.text.replace('{%executor_head%}',
+                                    "Безденежных Алексея Геннадьевича")
+    document.save('file_name.docx')
+    return 'file_name.docx'
 
 
 if __name__ == '__main__':

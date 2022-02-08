@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from rest_framework.utils import json
 from rest_framework.views import APIView
 
-from api.word_utility import get_request_template
+from api.word_utility import get_request_template, get_contract
 from project_root import settings
 from util import customize
 from util.Mixins import FormMenuMixin
@@ -877,6 +877,18 @@ class LeadApiView(viewsets.ModelViewSet):
     queryset = Lead.objects.all()
     serializer_class = LeadSerializer
 
+    @staticmethod
+    def send_request(lead:Lead):
+        html_content = render_to_string('mail/request_mail.html', {'UUID': lead.uuid})
+        mail = EmailMessage(
+            to=[lead.customer_email],
+            subject='Ваша заявка получена',
+            body=html_content
+        )
+        mail.attach_file(lead.lead_form.first().form.path)
+        mail.content_subtype = 'html'
+        mail.send(fail_silently=False)
+
     def create(self, request, *args, **kwargs):
         data = request.data
         file_name = get_request_template(data)
@@ -987,16 +999,7 @@ class LeadApiView(viewsets.ModelViewSet):
         else:
             response_status = status.HTTP_404_NOT_FOUND
             return Response("Неизвестный вид работы", status=response_status)
-        html_content = render_to_string('mail/request_mail.html', {'UUID':file_name.title()[:-5]})
-        mail = EmailMessage(
-            to=[lead.customer_email],
-            subject='Ваша заявка получена',
-            body=html_content
-        )
-        mail.attach_file(file_name)
-        mail.content_subtype = 'html'
-        mail.send(fail_silently=False)
-        os.remove(file_name)
+        LeadApiView.send_request(lead)
         # customer = models.ForeignKey(Organisation, on_delete=models.PROTECT)
         response_status = status.HTTP_200_OK
         return FileResponse(lead_form.form, status=response_status)
@@ -1008,6 +1011,7 @@ class SendRequestView(APIView):
 
     def post(self, request, lead):
         lead = Lead.objects.get(pk=lead)
+        LeadApiView.send_request(lead)
         response_status = status.HTTP_200_OK
         return Response("Заявка отправлена заказчику", status=response_status)
 
@@ -1018,5 +1022,6 @@ class SendContractView(APIView):
 
     def post(self, request, lead):
         lead = Lead.objects.get(pk=lead)
+        get_contract(lead)
         response_status = status.HTTP_200_OK
         return Response("Договор отправлен заказчику", status=response_status)

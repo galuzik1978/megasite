@@ -314,8 +314,20 @@ lead.edit.fields = [
     Field(type=FieldTypes.select, text='Вид работы', name='name', icon='fa fa-hashtag', subtable=type_work.name)
 ]
 lead.actions = [
-    Action(text='Отправить заявку', name='send_request', color='green', icon='mdi-account-multiple-plus', url='lead/send_request/'),
-    Action(text='Отправить договор', name='send_contract', color='red', icon='mdi-account-multiple-remove', url='lead/send_contract/'),
+    Action(
+        text='Отправить заявку',
+        name='send_request',
+        color='green',
+        icon='mdi-account-multiple-plus',
+        url='lead/send_request/'
+    ),
+    Action(
+        text='Отправить договор',
+        name='send_contract',
+        color='red',
+        icon='mdi-account-multiple-remove',
+        url='lead/send_contract/'
+    ),
     Action(text='Обновить', name='updateItem', color='blue', icon='mdi-close-circle-outline'),
     Action(text='Закрыть', name='cancel', icon='mdi-close-circle-outline')
 ]
