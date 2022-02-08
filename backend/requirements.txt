@@ -21,12 +21,12 @@ idna==2.10
 ipython==7.18.1
 ipython-genutils==0.2.0
 isort==5.5.2
-jedi==0.17.2
+jedi==0.18.1
 lazy-object-proxy==1.4.3
 lxml==4.7.1
 Markdown==3.2.2
 mccabe==0.6.1
-parso==0.8.0
+parso==0.8.3
 Petrovich==2.0.1
 pexpect==4.8.0
 pickleshare==0.7.5
