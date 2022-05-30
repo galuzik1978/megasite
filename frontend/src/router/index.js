@@ -16,6 +16,7 @@ import Guest from "../views/Guest.vue"
 import Base from '../views/Base.vue'
 import SaveQuery from '../views/SaveQuery.vue'
 import Administration from '../views/Administration.vue'
+import Queries from '../views/Queries.vue'
 
 Vue.use(VueRouter)
 
@@ -83,6 +84,17 @@ function dynamicPropsFn (route) {
         path: 'administration',
         name: 'administration',
         component: Administration,
+      },
+      {
+        path: 'queries',
+        name: 'queries',
+        component: Queries,
+      },
+      {
+        path: 'start/:id?',
+        name: 'NewQuery',
+        component: NewQuery,
+        //props: id => ({ id: id.id}),
       },
     ]
   },

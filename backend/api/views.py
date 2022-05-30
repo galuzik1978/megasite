@@ -25,12 +25,13 @@ from api.serializers import InboxSer, SenderSer, ProfileSer, RoleSer, CustomerSe
     ManagerSer, OrganisationSer, FormsSer, TablesSer, HeaderSer, SellSer, RowSer, \
     SelectChoicesSer, WorkRequestSer, SellValueSer, RowDefectsSer, ReasonSer, DocumentSer, ObservedDefectSer, \
     ProtocolAnnexSer, RulesSer, ObjRequestSer, FullProtocolSer, FileFieldTestSer, AnnexSer, \
-    TableSerializer, FormSerializer, LeadSerializer, UserSer, hint_address, get_dadata_bank, get_dadata
+    TableSerializer, FormSerializer, LeadSerializer, UserSer, hint_address, get_dadata_bank, get_dadata, \
+    NewLeadSerializer
 from organisation.models import Organisation, TypeOrganisation, CityType, StreetType, TypeLift, LiftDesign, \
     TypeProtocol, DeviceSet, \
     StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Object, Protocol, Device, Form, Table, Row, SellValue, \
     ProtocolAnnex, ObservedDefect, DefectList, Document, Header, Sell, Lead, LeadStatus, LeadForm, LeadWork, \
-    WorkObject, FlawDetectionObject, WorkLift, WorkObjAddress, WorkControl
+    WorkObject, FlawDetectionObject, WorkLift, WorkObjAddress, WorkControl, WorkMethod
 from mainWork.models import Status, TaskStatus, EventType, MainWork, Task, Message
 from postoffice.models import Inbox, TypeLetter, SendStatus, TypeWork, Contract, WorkRequest, ObjRequest
 from user_profile.models import Profile, Role
@@ -49,7 +50,7 @@ class InnRequestView(APIView):
 
     @staticmethod
     def post(request, format=None):
-        inn = request.query_params['inn']
+        inn = request.data['inn']
         return get_dadata(inn, request)
 
 
@@ -64,7 +65,7 @@ class BankRequestView(APIView):
 
     @staticmethod
     def post(request, format=None):
-        bank = request.query_params['bank']
+        bank = request.data['bank']
         return get_dadata_bank(bank, request)
 
 
@@ -277,7 +278,7 @@ class ObjectApiView(viewsets.ModelViewSet):
 
 class ProtocolApiView(viewsets.ModelViewSet):
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
     queryset = Protocol.objects.all()
     serializer_class = ProtocolSer
 
@@ -945,6 +946,9 @@ class LeadApiView(viewsets.ModelViewSet):
                 customer = Organisation.objects.create(
                     inn=data['customer']['inn'], type_customer=customer_type
                 )
+            lead.customer = customer
+            lead.save()
+
         lead_form = LeadForm.objects.create(
             lead=lead,
             name=file_name,
@@ -955,10 +959,10 @@ class LeadApiView(viewsets.ModelViewSet):
             for obj in data['objects']:
                 work_object = WorkObject.objects.create(
                     lead=lead,
-                    # address=obj
+                    name=obj
                 )
             for method in data['methods']:
-                work_method = WorkObject.objects.create(
+                work_method = WorkMethod.objects.create(
                     lead=lead,
                     name=method
                 )
@@ -1004,6 +1008,232 @@ class LeadApiView(viewsets.ModelViewSet):
         response_status = status.HTTP_200_OK
         return FileResponse(lead_form.form, status=response_status)
 
+    def retrieve(self, request, pk=None):
+        instance = self.get_object()
+        # instance.customer = instance.customer_contact_name
+        bank = {
+            'desc': "{}, БИК {}, ИНН {}".format(
+                instance.bank_name,
+                instance.bank_bic,
+                instance.bank_inn
+            ),
+            'bic': instance.bank_bic,
+            'correspondent_account':instance.bank_correspondent_account,
+            'inn': instance.bank_inn,
+            'kpp': instance.bank_kpp,
+            'name': instance.bank_name,
+            'payment_account': instance.bank_payment_account
+        }
+        customer = {
+            'full_name': instance.customer_full_name,
+            'type_customer': instance.customer_type.name,
+            'head': instance.customer_head,
+            'head_name': instance.customer_name,
+            'head_lastname': instance.customer_lastname,
+            'head_surname': instance.customer_surname,
+            'inn': instance.customer_inn,
+            'kpp': instance.customer_kpp,
+            'ogrn': instance.customer_ogrn,
+            'legal_address': instance.customer_legal_address,
+            'post_address': instance.customer_post_address,
+            'phone': instance.customer_phone,
+            'email': instance.customer_email,
+            'contact_name': instance.customer_contact_name,
+            'type_customer': instance.customer_type.name,
+            'desc': '{}, {}, {}'.format(
+                instance.customer_inn,
+                instance.customer_legal_address,
+                instance.customer_full_name)
+        }
+        controls = [
+            obj.name for obj in instance.workcontrol_set.all()
+        ]
+        methods = [
+            obj.name for obj in instance.workmethod_set.all()
+        ]
+        objects = [
+            obj.name for obj in instance.workobject_set.all()
+        ]
+        table1_rows = [
+            {
+                'address': row.address,
+                'object': row.object,
+                'element': row.element,
+                'count': row.count,
+            } for row in instance.flawdetectionobject_set.all()
+        ]
+        table_rows = [ {
+            'address': row.address,
+            'reg_number': row.reg_number,
+            'type': row.type,
+            'capacity': row.capacity,
+            'floors': row.floors,
+            'manufactered': row.manufactured,
+            'last_verife': row.last_verife.strftime('%Y-%m')
+        } for row in instance.worklift_set.all() ]
+        work = instance.work.name
+        lead = {
+            'id': instance.id,
+            'bank': bank,
+            'customer': customer,
+            'controls': controls,
+            'methods': methods,
+            'objects': objects,
+            'table1_rows': table1_rows,
+            'table_rows': table_rows,
+            'work':work
+        }
+        serializer = NewLeadSerializer(lead)
+        return Response(serializer.data)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        file_name = get_contract(instance)
+        lead_form = LeadForm.objects.create(
+            lead=instance,
+            name=file_name,
+            form=File(open(file_name, 'rb')),
+        )
+        response_status = status.HTTP_200_OK
+        return FileResponse(lead_form.form, status=response_status)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', True)
+        instance = self.get_object()
+        data = request.data
+        instance.customer = Organisation.objects.get(inn=data['customer']['inn'])
+        instance.bank_name
+        instance.bank_kpp
+        instance.bank_inn
+        instance.bank_bic
+        instance.bank_correspondent_account
+        instance.bank_payment_account
+        instance.customer_name
+        instance.customer_head
+        instance.customer_surname
+        instance.customer_lastname
+        instance.customer_full_name
+        instance.customer_contact_name
+        instance.customer_email
+        instance.customer_inn
+        instance.customer_kpp
+        instance.customer_ogrn
+        instance.customer_legal_address
+        instance.customer_post_address
+        instance.customer_phone
+        instance.customer_type
+
+        worklifts = [worklift.reg_number for worklift in instance.worklift_set.all()]
+        for worklift in data['table_rows']:
+            tmp = worklift['date_exam'].split('-')
+            tmp.append('1')
+            s = [int(r) for r in tmp]
+            last_verife = date(s[0], s[1], s[2])
+            try:
+                work = instance.worklift_set.get(reg_number=worklift['reg_num'])
+            except:
+                work = WorkLift.objects.create(
+                    address=worklift['address'],
+                    reg_number=worklift['reg_num'],
+                    type=worklift['type_lift'],
+                    capacity=worklift['capacity'],
+                    floors=int(worklift['floors']),
+                    manufactured=int(worklift['mf_year']),
+                    last_verife=last_verife,
+                    lead=instance
+                )
+
+            work.address = worklift['address']
+            work.reg_number = worklift['reg_num']
+            work.type = worklift['type_lift']
+            work.capacity = worklift['capacity']
+            work.floors = worklift['floors']
+            work.manufactured = worklift['mf_year']
+            work.last_verife = last_verife
+            work.save()
+            if work.reg_number in worklifts:
+                worklifts.remove(work.reg_number)
+
+        # Удаляем оставшиеся данные, отсутствующие в принятой таблице
+        for worklift in worklifts:
+            instance.worklift_set.filter(reg_number=worklift).first().delete()
+
+        workcontrols = [workcontrol.name for workcontrol in instance.workcontrol_set.all()]
+        for workcontrol in data['controls']:
+            try:
+                work = instance.workcontrol_set.get(name=workcontrol)
+            except:
+                WorkControl.objects.create(
+                    name=workcontrol,
+                    lead=instance
+                )
+            if workcontrol in workcontrols:
+                workcontrols.remove(workcontrol)
+
+        # Удаляем оставшиеся данные, отсутствующие в принятой таблице
+        for workcontrol in workcontrols:
+            instance.workcontrol_set.filter(name=workcontrol).first().delete()
+
+        workobjects = [workobject.name for workobject in instance.workobject_set.all()]
+        for obj in data['objects']:
+            try:
+                work = instance.workobject_set.get(name=obj)
+            except:
+                work = WorkObject.objects.create(
+                    name=workcontrol,
+                    lead=instance
+                )
+            if obj in workobjects:
+                workobjects.remove(obj)
+
+        # Удаляем оставшиеся данные, отсутствующие в принятой таблице
+        for workobject in workobjects:
+            instance.workobject_set.filter(name=workobject).first().delete()
+
+        workomethods = [workomethod.name for workomethod in instance.workmethod_set.all()]
+        for method in data['methods']:
+            try:
+                method = instance.workmethod_set.get(name=obj)
+            except:
+                method = WorkMethod.objects.create(
+                    name=method,
+                    lead=instance
+                )
+            if method in workomethods:
+                workomethods.remove(method)
+
+        # Удаляем оставшиеся данные, отсутствующие в принятой таблице
+        for method in workomethods:
+            instance.workmethod_set.filter(name=method).first().delete()
+
+        rows = [row.id for row in instance.flawdetectionobject_set.all()]
+        for row in data['table1_rows']:
+            try:
+                row = instance.flawdetectionobject_set.get(
+                    address=row['address'],
+                    object=row['object'],
+                    element=row['element']
+                )
+            except:
+                row = FlawDetectionObject.objects.create(
+                    address=row['address'],
+                    object=row['object'],
+                    element=row['element'],
+                    count=int(row['count']),
+                    lead=instance
+                )
+            if row in rows:
+                rows.remove(method)
+
+        # Удаляем оставшиеся данные, отсутствующие в принятой таблице
+        for row in rows:
+            instance.flawdetectionobject_set.filter(id=row).first().delete()
+
+        instance.work.name = data['work']
+
+        instance.save()
+        response_status = status.HTTP_200_OK
+        return Response("Данные успешно обновлены", status=response_status)
 
 class SendRequestView(APIView):
     authentication_classes = [authentication.BasicAuthentication]

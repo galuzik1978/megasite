@@ -363,8 +363,8 @@ def get_contract(lead):
             r.text = r.text.replace('{%executor_full%}', "Общество с ограниченной ответственностью «ИКЦ «Запсиб-Экспертиза»")
             r.text = r.text.replace('{%executor_head%}',
                                     "Безденежных Алексея Геннадьевича")
-    document.save('file_name.docx')
-    return 'file_name.docx'
+    document.save('contract.docx')
+    return 'contract.docx'
 
 
 if __name__ == '__main__':

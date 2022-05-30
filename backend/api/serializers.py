@@ -1,4 +1,6 @@
 import json
+from abc import ABC
+
 from dadata import Dadata
 import requests
 from django.contrib.auth.models import User
@@ -117,7 +119,7 @@ def get_name(data):
     if data.get('management'):
         tmp = data['management'].get('name').split()
         name['name'] = tmp[1]
-        name['surname'] = tmp[2]
+        name['surname'] = tmp[2] if len(tmp) >2  else ''
         name['lastname'] = tmp[0]
     elif data.get('fio'):
         name['name'] = data['fio']['name']
@@ -1017,11 +1019,83 @@ class FormSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'tables']
 
 
-class LeadSerializer(serializers.ModelSerializer):
+class BankSerializer(serializers.Serializer):
+    desc = serializers.CharField()
+    bic = serializers.CharField()
+    correspondent_account = serializers.CharField()
+    inn = serializers.CharField()
+    kpp = serializers.CharField()
+    name = serializers.CharField()
+    payment_account = serializers.CharField()
 
+
+class CustomerSerializer(serializers.Serializer):
+    desc = serializers.CharField()
+    full_name = serializers.CharField()
+    type_customer = serializers.CharField()
+    head = serializers.CharField()
+    head_name = serializers.CharField()
+    head_lastname = serializers.CharField()
+    head_surname = serializers.CharField()
+    inn = serializers.CharField()
+    kpp = serializers.CharField()
+    ogrn = serializers.CharField()
+    legal_address = serializers.CharField()
+    post_address = serializers.CharField()
+    phone = serializers.CharField()
+    email = serializers.CharField()
+    contact_name = serializers.CharField()
+    type_customer = serializers.CharField()
+
+
+class ControlSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+
+class MethodSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+
+class ObjectSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+
+class Teable1RowSerializer(serializers.Serializer):
+    address = serializers.CharField()
+    object = serializers.CharField()
+    element = serializers.CharField()
+    count = serializers.CharField()
+
+
+class TeableRowSerializer(serializers.Serializer):
+    address = serializers.CharField()
+    reg_num = serializers.CharField(source='reg_number')
+    type_lift = serializers.CharField(source='type')
+    capacity = serializers.CharField()
+    floors = serializers.CharField()
+    mf_year = serializers.CharField(source='manufactered')
+    date_exam = serializers.CharField(source='last_verife')
+
+
+class LeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lead
         fields = '__all__'
+
+
+class NewLeadSerializer(serializers.ModelSerializer):
+    bank = BankSerializer(required=False)
+    customer = CustomerSerializer(required=False)
+    controls = serializers.ListField(required=False)
+    methods = serializers.ListField(required=False)
+    objects = serializers.ListField(required=False)
+    table_rows = TeableRowSerializer(many=True, required=False)
+    table1_rows = Teable1RowSerializer(many=True, required=False)
+    work = serializers.CharField(required=False)
+
+    class Meta:
+        model = Lead
+        fields = ['id', 'bank', 'customer', 'controls', 'methods', 'objects', 'table1_rows', 'table_rows', 'work']
 
 
 class AppSerializer(serializers.Serializer):

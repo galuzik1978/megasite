@@ -401,6 +401,7 @@ class LeadStatus(models.Model):
 
 class LeadWork(models.Model):
     name = models.CharField(max_length=125, null=True)
+    query = models.FileField(upload_to='query_forms')
 
     def __str__(self):
         return self.name

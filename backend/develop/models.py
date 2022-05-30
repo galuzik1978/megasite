@@ -8,6 +8,7 @@ class Division(models.Model):
     def __str__(self):
         return self.name
 
+
 class Region(models.Model):
     name = models.CharField(max_length=80, verbose_name="Участок")
     division = models.ForeignKey(Division, on_delete=models.PROTECT)
@@ -17,6 +18,7 @@ class Region(models.Model):
             self.name,
             self.division.name
         )
+
 
 class Machine(models.Model):
     name = models.CharField(max_length=80, verbose_name="Оборудование")

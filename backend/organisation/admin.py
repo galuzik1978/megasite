@@ -3,7 +3,7 @@ from django.contrib import admin
 from organisation.models import TypeOrganisation, ChoiceName, FormType, Element, Group, CityType, StreetType, TypeLift, \
     LiftDesign, TypeProtocol, DeviceSet, StatusDevice, TypeDevice, RangeMeasure, AccuracyClass, Organisation, Object, \
     Form, Protocol, Device, Document, Reason, DefectList, Table, Header, Row, Sell, SelectChoices, SellValue, \
-    RowDefects, ObservedDefect, Rules, ProtocolAnnex
+    RowDefects, ObservedDefect, Rules, ProtocolAnnex, LeadWork
 
 admin.site.register(TypeOrganisation)
 admin.site.register(ChoiceName)
@@ -38,3 +38,4 @@ admin.site.register(RowDefects)
 admin.site.register(ObservedDefect)
 admin.site.register(Rules)
 admin.site.register(ProtocolAnnex)
+admin.site.register(LeadWork)

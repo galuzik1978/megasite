@@ -91,6 +91,21 @@
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+          <v-list-item
+            :key="200"
+            link
+            @click="change_data(items[2].table, '/queries')"
+            active-class="active-menu-btn"
+          >
+            <v-list-item-action style="width:24px">
+              <v-icon>mdi-database-search</v-icon>
+            </v-list-item-action>
+            <v-list-item-content class="text-left">
+              <v-list-item-title>
+                Работа с заявками
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
         </v-list-item-group>
       </v-list>
       <!-- /Главное меню -->
@@ -142,20 +157,21 @@
     <v-main>
 
       <!-- Provides the application the proper gutter -->
-      <v-container fluid>
-        <!-- If using vue-router -->
-        <router-view></router-view>
-      </v-container>
+      <!-- If using vue-router -->
+      <router-view></router-view>
     </v-main>
 
-    <v-footer app class="myFont">
-      <!-- -->
-      <v-spacer></v-spacer>
-      <v-banner
-        elevation="4"
-        icon="mdi-copyright"
-        single-line
-      >Copyright by ИКЦ Запсиб-Экспертиза</v-banner>
+    <v-footer 
+      padless 
+      app 
+    >
+      <v-card class="text-right black--text" width="100%">
+        <!-- -->
+        <v-spacer></v-spacer>
+        <v-card-text>
+          <v-icon color="black">mdi-copyright</v-icon> Copyright by ИКЦ Запсиб-Экспертиза
+        </v-card-text>
+      </v-card>
     </v-footer>
   </v-app>
 </template>
@@ -223,6 +239,7 @@
 </script>
 <style>
 .myFont {
-  font-size: 0.8em; 
+  font-size: 0.6em; 
 }
+
 </style>
